@@ -13,9 +13,10 @@ import type {
 import {
   getArReceiptSearchList,
   getArReceiptDetail,
-  createArReceiptDetail,
-  updateArReceiptDetail,
-  delArReceiptDetail,
+  createArReceipt,
+  updateArReceipt,
+  deleteArReceipt,
+  postArReceipt,
 } from '../services/accountReceivable';
 
 const QUERY_KEYS = {
@@ -53,7 +54,7 @@ export function useCreateArReceipt() {
   const queryClient = useQueryClient();
 
   return useMutation<ArReceipt, Error, Omit<ArReceipt, 'ArRcptSeq'>>({
-    mutationFn: createArReceiptDetail,
+    mutationFn: createArReceipt,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({
@@ -76,7 +77,7 @@ export function useUpdateArReceipt() {
   const queryClient = useQueryClient();
 
   return useMutation<ArReceipt, Error, ArReceipt>({
-    mutationFn: updateArReceiptDetail,
+    mutationFn: updateArReceipt,
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       await queryClient.invalidateQueries({
@@ -107,7 +108,7 @@ export function useDeleteArReceipt() {
     { ArRcptSeq: number; username: string; remark: string }
   >({
     mutationFn: ({ ArRcptSeq, username, remark }) =>
-      delArReceiptDetail(ArRcptSeq, username, remark),
+      deleteArReceipt(ArRcptSeq, username, remark),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({
@@ -120,6 +121,32 @@ export function useDeleteArReceipt() {
       notifications.show({
         title: 'Error',
         message: error.message || 'Failed to void AR receipt',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function usePostArReceipt() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ArReceipt, Error, number>({
+    mutationFn: postArReceipt,
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.detail, data.ArRcptSeq],
+      });
+      notifications.show({
+        title: 'Success',
+        message: 'AR Receipt posted successfully',
+        color: 'green',
+      });
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to post AR receipt',
         color: 'red',
       });
     },

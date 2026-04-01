@@ -13,9 +13,10 @@ import type {
 import {
   getApInvoiceSearchList,
   getApInvoiceDetail,
-  createApInvoiceDetail,
-  updateApInvoiceDetail,
-  delApInvoiceDetail,
+  createApInvoice,
+  updateApInvoice,
+  deleteApInvoice,
+  postApInvoice,
 } from '../services/accountPayable';
 
 const QUERY_KEYS = {
@@ -53,7 +54,7 @@ export function useCreateApInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation<ApInvoice, Error, Omit<ApInvoice, 'ApInvhSeq'>>({
-    mutationFn: createApInvoiceDetail,
+    mutationFn: createApInvoice,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({
@@ -76,7 +77,7 @@ export function useUpdateApInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation<ApInvoice, Error, ApInvoice>({
-    mutationFn: updateApInvoiceDetail,
+    mutationFn: updateApInvoice,
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       await queryClient.invalidateQueries({
@@ -107,7 +108,7 @@ export function useDeleteApInvoice() {
     { ApInvhSeq: number; username: string; remark: string }
   >({
     mutationFn: ({ ApInvhSeq, username, remark }) =>
-      delApInvoiceDetail(ApInvhSeq, username, remark),
+      deleteApInvoice(ApInvhSeq, username, remark),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({
@@ -120,6 +121,32 @@ export function useDeleteApInvoice() {
       notifications.show({
         title: 'Error',
         message: error.message || 'Failed to void AP invoice',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function usePostApInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ApInvoice, Error, number>({
+    mutationFn: postApInvoice,
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.detail, data.ApInvhSeq],
+      });
+      notifications.show({
+        title: 'Success',
+        message: 'AP Invoice posted successfully',
+        color: 'green',
+      });
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to post AP invoice',
         color: 'red',
       });
     },

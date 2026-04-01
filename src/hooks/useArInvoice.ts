@@ -13,9 +13,10 @@ import type {
 import {
   getArInvoiceSearchList,
   getArInvoiceDetail,
-  createArInvoiceDetail,
-  updateArInvoiceDetail,
-  delArInvoiceDetail,
+  createArInvoice,
+  updateArInvoice,
+  deleteArInvoice,
+  postArInvoice,
 } from '../services/accountReceivable';
 
 const QUERY_KEYS = {
@@ -53,7 +54,7 @@ export function useCreateArInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation<ArInvoice, Error, Omit<ArInvoice, 'ArInvhSeq'>>({
-    mutationFn: createArInvoiceDetail,
+    mutationFn: createArInvoice,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({
@@ -76,7 +77,7 @@ export function useUpdateArInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation<ArInvoice, Error, ArInvoice>({
-    mutationFn: updateArInvoiceDetail,
+    mutationFn: updateArInvoice,
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       await queryClient.invalidateQueries({
@@ -107,7 +108,7 @@ export function useDeleteArInvoice() {
     { ArInvhSeq: number; username: string; remark: string }
   >({
     mutationFn: ({ ArInvhSeq, username, remark }) =>
-      delArInvoiceDetail(ArInvhSeq, username, remark),
+      deleteArInvoice(ArInvhSeq, username, remark),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({
@@ -120,6 +121,32 @@ export function useDeleteArInvoice() {
       notifications.show({
         title: 'Error',
         message: error.message || 'Failed to void AR invoice',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function usePostArInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ArInvoice, Error, number>({
+    mutationFn: postArInvoice,
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.detail, data.ArInvhSeq],
+      });
+      notifications.show({
+        title: 'Success',
+        message: 'AR Invoice posted successfully',
+        color: 'green',
+      });
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to post AR invoice',
         color: 'red',
       });
     },

@@ -7,35 +7,38 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import type {
   ArProfile,
-  ArProfileFilterParams,
   ArFolio,
+  ArProfileFilterParams,
   ArFolioFilterParams,
   PagingResult,
 } from '../types';
 import {
-  getArProfileSearchList,
+  getArProfileList,
   getArProfileDetail,
   createArProfile,
   updateArProfile,
   deleteArProfile,
   getArFolioList,
-  getArFolioDetail,
+  getArFolioBalance,
+  getArTypeList,
 } from '../services/accountReceivable';
 
 const QUERY_KEYS = {
   list: 'arProfileList',
   detail: 'arProfileDetail',
   folio: 'arFolio',
+  folioBalance: 'arFolioBalance',
+  arTypeList: 'arTypeList',
 } as const;
 
 // ============================================================================
-// Query Hooks
+// AR Profile Query Hooks
 // ============================================================================
 
 export function useArProfileList(params: ArProfileFilterParams) {
   return useQuery<PagingResult<ArProfile>, Error>({
     queryKey: [QUERY_KEYS.list, params],
-    queryFn: () => getArProfileSearchList(params),
+    queryFn: () => getArProfileList(params),
     staleTime: 30000, // 30 seconds
     placeholderData: (previousData) => previousData,
   });
@@ -50,26 +53,8 @@ export function useArProfileDetail(ProfileId: number) {
   });
 }
 
-export function useArFolioList(params: ArFolioFilterParams) {
-  return useQuery<ArFolio[], Error>({
-    queryKey: [QUERY_KEYS.folio, params],
-    queryFn: () => getArFolioList(params),
-    enabled: params.ProfileId > 0,
-    staleTime: 30000, // 30 seconds
-  });
-}
-
-export function useArFolioDetail(FolioId: number) {
-  return useQuery<ArFolio, Error>({
-    queryKey: [QUERY_KEYS.folio, 'detail', FolioId],
-    queryFn: () => getArFolioDetail(FolioId),
-    enabled: FolioId > 0,
-    staleTime: 60000, // 1 minute
-  });
-}
-
 // ============================================================================
-// Mutation Hooks
+// AR Profile Mutation Hooks
 // ============================================================================
 
 export function useCreateArProfile() {
@@ -141,5 +126,53 @@ export function useDeleteArProfile() {
         color: 'red',
       });
     },
+  });
+}
+
+// ============================================================================
+// AR Folio Query Hooks
+// ============================================================================
+
+export function useArFolioList(params: ArFolioFilterParams) {
+  return useQuery<ArFolio[], Error>({
+    queryKey: [QUERY_KEYS.folio, params],
+    queryFn: () => getArFolioList(params),
+    enabled: params.ProfileId > 0,
+    staleTime: 30000,
+  });
+}
+
+export function useArFolioBalance(ProfileId: number) {
+  return useQuery<
+    {
+      ProfileId: number;
+      ProfileCode: string;
+      ProfileName: string;
+      Balance: number;
+    },
+    Error
+  >({
+    queryKey: [QUERY_KEYS.folioBalance, ProfileId],
+    queryFn: () => getArFolioBalance(ProfileId),
+    enabled: ProfileId > 0,
+    staleTime: 60000,
+  });
+}
+
+// ============================================================================
+// AR Type Query Hook
+// ============================================================================
+
+export function useArTypeList() {
+  return useQuery<
+    Array<{
+      ArTypeId: number;
+      ArTypeName: string;
+    }>,
+    Error
+  >({
+    queryKey: [QUERY_KEYS.arTypeList],
+    queryFn: getArTypeList,
+    staleTime: 300000, // 5 minutes
   });
 }

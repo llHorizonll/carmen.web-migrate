@@ -22,4 +22,24 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.staging
+!.env.production
+
+# Testing
+coverage
+.nyc_output
+
+# Docker volumes
+volumes/
+
+# Backup files
+*.bak
+*.backup
+
+# OS files
+Thumbs.db
