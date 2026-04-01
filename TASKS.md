@@ -6,7 +6,8 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - **Technology Stack**: React 18 + TypeScript + Mantine 8 + TanStack Query 5 + TanStack Table 8
 - **Build Tool**: Vite 6
 - **Timeline**: 10 weeks (Hybrid approach)
-- **Source**: `C:\source\carmen.web` (React 17, JS, MUI v4, react-admin v3)
+- **Source**: `projects/carmen.web-old` (React 17, JS, MUI v4, react-admin v3)
+- **Target**: `projects/carmen.web-migrate` (Current directory)
 
 ---
 
@@ -24,47 +25,47 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [x] ESLint + Prettier configured
 - [x] PostCSS configured for Mantine
 
-### TASK-002: Create Skills
+### TASK-002: Create Skills ✅ COMPLETED
 **Agent**: DevEx Lead
-**Status**: In Progress
+**Status**: Done
 **Deliverables**:
-- [ ] `.agents/skills/carmen-mantine-patterns/SKILL.md`
-- [ ] `.agents/skills/tanstack-table-patterns/SKILL.md`
-- [ ] `.agents/skills/tanstack-query-patterns/SKILL.md`
+- [x] `.agents/skills/carmen-mantine-patterns/SKILL.md`
+- [x] `.agents/skills/tanstack-table-patterns/SKILL.md`
+- [x] `.agents/skills/tanstack-query-patterns/SKILL.md`
 
-### TASK-003: Type Definitions
+### TASK-003: Type Definitions ✅ COMPLETED
 **Agent**: Foundation Lead
-**Status**: In Progress
+**Status**: Done
 **Deliverables**:
 - [x] `src/types/models.ts` - All domain models
 - [x] `src/types/api.ts` - API request/response types
 - [x] `src/types/components.ts` - Component prop types
 
-### TASK-004: Core Utilities
+### TASK-004: Core Utilities ✅ COMPLETED
 **Agent**: Foundation Lead
-**Status**: In Progress
+**Status**: Done
 **Deliverables**:
 - [x] `src/utils/constants.ts` - Permissions
 - [x] `src/utils/formatter.ts` - Date/number formatting
 - [x] `src/utils/request.ts` - Axios configuration
-- [ ] `src/lib/queryClient.ts` - TanStack Query client ✅
-- [ ] `src/lib/mantine.ts` - Theme configuration ✅
+- [x] `src/lib/queryClient.ts` - TanStack Query client
+- [x] `src/lib/mantine.ts` - Theme configuration
 
-### TASK-005: Layout System
+### TASK-005: Layout System ✅ COMPLETED
 **Agent**: Layout Lead
-**Status**: In Progress
+**Status**: Done
 **Deliverables**:
 - [x] `src/layout/AppShell.tsx` - Main layout
 - [x] `src/layout/NavbarMenu.tsx` - Navigation menu
 - [x] `src/layout/UserMenu.tsx` - User dropdown
-- [ ] `src/layout/ErrorDashboard.tsx` - Error display
+- [ ] `src/layout/ErrorDashboard.tsx` - Error display (optional)
 
 ---
 
 ## Phase 2: Core Components (Week 1-2)
 
 ### TASK-006: UI Components
-**Agent**: UI Lead
+**Agent**: UI Lead / Frontend Agent
 **Status**: Not Started
 **Dependencies**: TASK-001, TASK-002
 **Deliverables**:
@@ -76,7 +77,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/components/ui/FilterPanel.tsx` - Search/filter panel
 
 ### TASK-007: Dialog Components
-**Agent**: UI Lead
+**Agent**: UI Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/components/DialogJVDetail.tsx`
@@ -87,36 +88,37 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 
 ---
 
-## Phase 3: Services & Hooks (Week 2)
+## Phase 3: Services & Hooks (Week 2) ✅ COMPLETED
 
-### TASK-008: API Services
-**Agent**: API Lead
-**Status**: In Progress
+### TASK-008: API Services ✅
+**Agent**: API Lead / Backend Agent
+**Status**: Done
 **Deliverables**:
-- [x] `src/services/generalLedger.ts` - GL services ✅
-- [ ] `src/services/accountPayable.ts` - AP services
-- [ ] `src/services/accountReceivable.ts` - AR services
-- [ ] `src/services/asset.ts` - Asset services
-- [ ] `src/services/user.ts` - User/auth services
+- [x] `src/services/generalLedger.ts` - GL services
+- [x] `src/services/accountPayable.ts` - AP services
+- [x] `src/services/accountReceivable.ts` - AR services
+- [x] `src/services/asset.ts` - Asset services
+- [ ] `src/services/user.ts` - User/auth services (optional)
 
-### TASK-009: React Query Hooks
-**Agent**: API Lead
-**Status**: Not Started
+### TASK-009: React Query Hooks ✅
+**Agent**: API Lead / Backend Agent
+**Status**: Done
 **Deliverables**:
-- [x] `src/hooks/useJournalVoucher.ts` ✅
-- [ ] `src/hooks/useAllocationVoucher.ts`
-- [ ] `src/hooks/useApInvoice.ts`
-- [ ] `src/hooks/useApPayment.ts`
-- [ ] `src/hooks/useArInvoice.ts`
-- [ ] `src/hooks/useArReceipt.ts`
-- [ ] `src/hooks/useAsset.ts`
+- [x] `src/hooks/useJournalVoucher.ts`
+- [x] `src/hooks/useAllocationVoucher.ts`
+- [x] `src/hooks/useApInvoice.ts`
+- [x] `src/hooks/useApPayment.ts`
+- [x] `src/hooks/useArInvoice.ts`
+- [x] `src/hooks/useArReceipt.ts`
+- [x] `src/hooks/useArProfile.ts`
+- [x] `src/hooks/useAsset.ts`
 
 ---
 
 ## Phase 4: GL Module (Week 3-4)
 
 ### TASK-010: Journal Voucher
-**Agent**: GL Lead
+**Agent**: GL Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/gl/journal-voucher/List.tsx`
@@ -125,7 +127,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] Route: `/gl/journal-voucher`
 
 ### TASK-011: Allocation Voucher
-**Agent**: GL Lead
+**Agent**: GL Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/gl/allocation-voucher/List.tsx`
@@ -133,7 +135,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/pages/gl/allocation-voucher/Edit.tsx`
 
 ### TASK-012: Other GL Modules
-**Agent**: GL Lead
+**Agent**: GL Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] Template Voucher (StdVoucher)
@@ -149,7 +151,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 ## Phase 5: AP Module (Week 5-6)
 
 ### TASK-013: AP Invoice
-**Agent**: AP Lead
+**Agent**: AP Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/ap/invoice/List.tsx`
@@ -157,7 +159,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/pages/ap/invoice/Edit.tsx`
 
 ### TASK-014: AP Payment
-**Agent**: AP Lead
+**Agent**: AP Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/ap/payment/List.tsx`
@@ -165,7 +167,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/pages/ap/payment/Edit.tsx`
 
 ### TASK-015: AP Vendor
-**Agent**: AP Lead
+**Agent**: AP Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/ap/vendor/List.tsx`
@@ -177,7 +179,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 ## Phase 6: AR Module (Week 6-7)
 
 ### TASK-016: AR Profile
-**Agent**: AR Lead
+**Agent**: AR Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/ar/profile/List.tsx`
@@ -185,7 +187,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/pages/ar/profile/Edit.tsx`
 
 ### TASK-017: AR Invoice
-**Agent**: AR Lead
+**Agent**: AR Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/ar/invoice/List.tsx`
@@ -193,7 +195,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/pages/ar/invoice/Edit.tsx`
 
 ### TASK-018: AR Receipt
-**Agent**: AR Lead
+**Agent**: AR Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/ar/receipt/List.tsx`
@@ -201,7 +203,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/pages/ar/receipt/Edit.tsx`
 
 ### TASK-019: AR Folio
-**Agent**: AR Lead
+**Agent**: AR Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/ar/folio/List.tsx`
@@ -212,7 +214,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 ## Phase 7: Asset Module (Week 7-8)
 
 ### TASK-020: Asset Register
-**Agent**: Asset Lead
+**Agent**: Asset Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/pages/asset/register/List.tsx`
@@ -220,7 +222,7 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/pages/asset/register/Edit.tsx`
 
 ### TASK-021: Other Asset Modules
-**Agent**: Asset Lead
+**Agent**: Asset Lead / Frontend Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] Pre-Asset
@@ -230,10 +232,39 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 
 ---
 
-## Phase 8: Testing & QA (Week 8-9)
+## Phase 8: DevOps & Infrastructure (Week 3-4) ✅ COMPLETED
 
-### TASK-022: Test Suite
-**Agent**: QA Lead
+### TASK-022: Docker Setup ✅
+**Agent**: DevOps Agent
+**Status**: Done
+**Deliverables**:
+- [x] `Dockerfile` - Production build
+- [x] `Dockerfile.dev` - Development
+- [x] `docker-compose.yml` - Dev stack
+- [x] `docker-compose.prod.yml` - Production
+- [x] `nginx.conf` - Web server config
+
+### TASK-023: CI/CD Pipeline ✅
+**Agent**: DevOps Agent
+**Status**: Done
+**Deliverables**:
+- [x] `.github/workflows/ci-cd.yml`
+- [x] `.github/workflows/pr-checks.yml`
+
+### TASK-024: Deployment Configs ✅
+**Agent**: DevOps Agent
+**Status**: Done
+**Deliverables**:
+- [x] `vercel.json`
+- [x] `netlify.toml`
+- [x] `Makefile`
+
+---
+
+## Phase 9: Testing & QA (Week 8-9)
+
+### TASK-025: Test Suite
+**Agent**: QA Lead / QA Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] `src/__tests__/unit/utils/formatter.test.ts`
@@ -243,8 +274,8 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 - [ ] `src/__tests__/integration/ar/arReceipt.test.tsx`
 - [ ] Test coverage > 70%
 
-### TASK-023: Performance Testing
-**Agent**: Performance Lead
+### TASK-026: Performance Testing
+**Agent**: QA Lead / QA Agent
 **Status**: Not Started
 **Deliverables**:
 - [ ] Table with 10k rows scrolls at 60fps
@@ -254,18 +285,19 @@ This file coordinates the multi-agent migration effort for Carmen.Web.
 
 ---
 
-## Phase 9: Final Polish (Week 9-10)
+## Phase 10: Final Polish (Week 9-10)
 
-### TASK-024: Documentation
-**Agent**: All Leads
-**Status**: Not Started
+### TASK-027: Documentation
+**Agent**: All Leads / PM Agent
+**Status**: In Progress
 **Deliverables**:
-- [ ] Update AGENTS.md
+- [x] `README.md` - Project overview
+- [x] `DEVOPS.md` - DevOps guide (by DevOps Agent)
 - [ ] API compatibility report
 - [ ] Migration guide
 - [ ] Performance comparison
 
-### TASK-025: Bug Fixes & Optimization
+### TASK-028: Bug Fixes & Optimization
 **Agent**: All Leads
 **Status**: Not Started
 **Deliverables**:
@@ -301,8 +333,8 @@ Detailed description of what needs to be done
 - [ ] Criteria 2
 
 ## Reference Files
-- Original: `C:\source\carmen.web\src\...`
-- New: `src\...`
+- Original: `projects/carmen.web-old/src/...`
+- New: `src/...`
 
 ## Notes
 Any additional notes
@@ -312,6 +344,7 @@ Any additional notes
 
 ## Quick Links
 
-- **Original Source**: `C:\source\carmen.web`
-- **Target Directory**: `C:\source\carmen.web-migrate`
-- **Plan File**: `C:\Users\thago\.kimi\plans\wolverine-hulk-wonder-woman.md`
+- **Original Source (Legacy)**: `projects/carmen.web-old`
+- **Target Directory (This Project)**: `projects/carmen.web-migrate`
+- **Task Tracking**: `TASKS.md` (This file)
+- **DevOps Guide**: `DEVOPS.md`
