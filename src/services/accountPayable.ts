@@ -14,7 +14,6 @@ import type {
   ApInvoiceFilterParams,
   ApPaymentFilterParams,
   ApVendorFilterParams,
-  UriQueryString,
   PagingResult,
 } from '../types/api';
 

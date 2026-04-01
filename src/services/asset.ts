@@ -10,7 +10,6 @@ import type {
 } from '../types/models';
 import type {
   AssetFilterParams,
-  UriQueryString,
   PagingResult,
 } from '../types/api';
 

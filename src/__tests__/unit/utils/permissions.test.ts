@@ -16,7 +16,6 @@ import {
   getUserPermissions,
   hasAnyPermission,
   hasAllPermissions,
-  type PermissionModule,
   type PermissionAction,
 } from '@/utils/permissions';
 import type { User } from '@/types/models';

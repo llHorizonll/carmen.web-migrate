@@ -16,7 +16,6 @@ import type {
   ArReceiptFilterParams,
   ArProfileFilterParams,
   ArFolioFilterParams,
-  UriQueryString,
   PagingResult,
 } from '../types/api';
 
