@@ -11,11 +11,11 @@ import type {
   PagingResult,
 } from '../types';
 import {
-  getApVendorSearchList,
-  getApVendorDetail,
-  createApVendor,
-  updateApVendor,
-  deleteApVendor,
+  getVendorList,
+  getVendorDetail,
+  createVendor,
+  updateVendor,
+  deleteVendor,
 } from '../services/accountPayable';
 
 const QUERY_KEYS = {
@@ -30,8 +30,8 @@ const QUERY_KEYS = {
 export function useApVendorList(params: ApVendorFilterParams) {
   return useQuery<PagingResult<ApVendor>, Error>({
     queryKey: [QUERY_KEYS.list, params],
-    queryFn: () => getApVendorSearchList(params),
-    staleTime: 30000, // 30 seconds
+    queryFn: () => getVendorList(params),
+    staleTime: 30000,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -39,9 +39,9 @@ export function useApVendorList(params: ApVendorFilterParams) {
 export function useApVendorDetail(VendorId: number) {
   return useQuery<ApVendor, Error>({
     queryKey: [QUERY_KEYS.detail, VendorId],
-    queryFn: () => getApVendorDetail(VendorId),
+    queryFn: () => getVendorDetail(VendorId),
     enabled: VendorId > 0,
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
   });
 }
 
@@ -53,7 +53,7 @@ export function useCreateApVendor() {
   const queryClient = useQueryClient();
 
   return useMutation<ApVendor, Error, Omit<ApVendor, 'VendorId'>>({
-    mutationFn: createApVendor,
+    mutationFn: createVendor,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({
@@ -76,7 +76,7 @@ export function useUpdateApVendor() {
   const queryClient = useQueryClient();
 
   return useMutation<ApVendor, Error, ApVendor>({
-    mutationFn: updateApVendor,
+    mutationFn: updateVendor,
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       await queryClient.invalidateQueries({
@@ -102,7 +102,7 @@ export function useDeleteApVendor() {
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, number>({
-    mutationFn: deleteApVendor,
+    mutationFn: deleteVendor,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
       notifications.show({

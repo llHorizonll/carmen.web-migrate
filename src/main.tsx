@@ -16,30 +16,16 @@ import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/spotlight/styles.css';
 
-// Enable Mock Service Worker in development
-async function enableMocking() {
-  if (import.meta.env.MODE !== 'development') {
-    return;
-  }
-
-  const { worker } = await import('./mocks/browser');
-  return worker.start({
-    onUnhandledRequest: 'bypass', // Don't warn about unhandled requests
-  });
-}
-
-enableMocking().then(() => {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <MantineProvider theme={theme} defaultColorScheme="light">
-          <ModalsProvider>
-            <Notifications position="top-right" />
-            <RouterProvider router={router} />
-          </ModalsProvider>
-        </MantineProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </React.StrictMode>
-  );
-});
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <MantineProvider theme={theme} defaultColorScheme="light">
+        <ModalsProvider>
+          <Notifications position="top-right" />
+          <RouterProvider router={router} />
+        </ModalsProvider>
+      </MantineProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  </React.StrictMode>
+);
