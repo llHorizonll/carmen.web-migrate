@@ -194,4 +194,12 @@ export function resetSnack(): void {
   showSnack = false;
 }
 
+export function setAuthToken(token: string): void {
+  localStorage.setItem('AccessToken', token);
+}
+
+export function clearAuthToken(): void {
+  localStorage.removeItem('AccessToken');
+}
+
 export default axiosAuth;

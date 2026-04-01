@@ -1,0 +1,164 @@
+/**
+ * Account Receivable Services
+ * AR module API services
+ */
+
+import axiosAuth from '../utils/request';
+import type {
+  ArInvoice,
+  ArReceipt,
+  ArProfile,
+  ArFolio,
+} from '../types/models';
+import type {
+  ArInvoiceFilterParams,
+  ArReceiptFilterParams,
+  ArProfileFilterParams,
+  ArFolioFilterParams,
+  PagingResult,
+} from '../types/api';
+
+// ============================================================================
+// AR Invoice APIs
+// ============================================================================
+
+export async function getArInvoiceSearchList(
+  params: ArInvoiceFilterParams
+): Promise<PagingResult<ArInvoice>> {
+  const { data } = await axiosAuth.post('/api/arInvoice/search', params);
+  return data;
+}
+
+export async function getArInvoiceDetail(ArInvhSeq: number): Promise<ArInvoice> {
+  const { data } = await axiosAuth.get(`/api/arInvoice/${ArInvhSeq}`);
+  if (data?.Detail?.length > 0) {
+    data.Detail.forEach((item: { index?: number }, idx: number) => {
+      item.index = idx;
+    });
+  }
+  return data;
+}
+
+export async function createArInvoiceDetail(
+  param: Omit<ArInvoice, 'ArInvhSeq'>
+): Promise<ArInvoice> {
+  const { data } = await axiosAuth.post('/api/arInvoice', param);
+  return data;
+}
+
+export async function updateArInvoiceDetail(
+  param: ArInvoice
+): Promise<ArInvoice> {
+  const { data } = await axiosAuth.put(`/api/arInvoice/${param.ArInvhSeq}`, param);
+  return data;
+}
+
+export async function delArInvoiceDetail(
+  ArInvhSeq: number,
+  username: string,
+  remark: string
+): Promise<void> {
+  const { data } = await axiosAuth.delete(
+    `/api/arInvoice/${ArInvhSeq}?user=${username}&voidRemark=${encodeURIComponent(
+      remark
+    )}`
+  );
+  return data;
+}
+
+// ============================================================================
+// AR Receipt APIs
+// ============================================================================
+
+export async function getArReceiptSearchList(
+  params: ArReceiptFilterParams
+): Promise<PagingResult<ArReceipt>> {
+  const { data } = await axiosAuth.post('/api/arReceipt/search', params);
+  return data;
+}
+
+export async function getArReceiptDetail(ArRcptSeq: number): Promise<ArReceipt> {
+  const { data } = await axiosAuth.get(`/api/arReceipt/${ArRcptSeq}`);
+  if (data?.Detail?.length > 0) {
+    data.Detail.forEach((item: { index?: number }, idx: number) => {
+      item.index = idx;
+    });
+  }
+  return data;
+}
+
+export async function createArReceiptDetail(
+  param: Omit<ArReceipt, 'ArRcptSeq'>
+): Promise<ArReceipt> {
+  const { data } = await axiosAuth.post('/api/arReceipt', param);
+  return data;
+}
+
+export async function updateArReceiptDetail(
+  param: ArReceipt
+): Promise<ArReceipt> {
+  const { data } = await axiosAuth.put(`/api/arReceipt/${param.ArRcptSeq}`, param);
+  return data;
+}
+
+export async function delArReceiptDetail(
+  ArRcptSeq: number,
+  username: string,
+  remark: string
+): Promise<void> {
+  const { data } = await axiosAuth.delete(
+    `/api/arReceipt/${ArRcptSeq}?user=${username}&voidRemark=${encodeURIComponent(
+      remark
+    )}`
+  );
+  return data;
+}
+
+// ============================================================================
+// AR Profile APIs
+// ============================================================================
+
+export async function getArProfileSearchList(
+  params: ArProfileFilterParams
+): Promise<PagingResult<ArProfile>> {
+  const { data } = await axiosAuth.post('/api/arProfile/search', params);
+  return data;
+}
+
+export async function getArProfileDetail(ProfileId: number): Promise<ArProfile> {
+  const { data } = await axiosAuth.get(`/api/arProfile/${ProfileId}`);
+  return data;
+}
+
+export async function createArProfile(
+  param: Omit<ArProfile, 'ProfileId'>
+): Promise<ArProfile> {
+  const { data } = await axiosAuth.post('/api/arProfile', param);
+  return data;
+}
+
+export async function updateArProfile(param: ArProfile): Promise<ArProfile> {
+  const { data } = await axiosAuth.put(`/api/arProfile/${param.ProfileId}`, param);
+  return data;
+}
+
+export async function deleteArProfile(ProfileId: number): Promise<void> {
+  const { data } = await axiosAuth.delete(`/api/arProfile/${ProfileId}`);
+  return data;
+}
+
+// ============================================================================
+// AR Folio APIs
+// ============================================================================
+
+export async function getArFolioList(
+  params: ArFolioFilterParams
+): Promise<ArFolio[]> {
+  const { data } = await axiosAuth.post('/api/arFolio/search', params);
+  return data;
+}
+
+export async function getArFolioDetail(FolioId: number): Promise<ArFolio> {
+  const { data } = await axiosAuth.get(`/api/arFolio/${FolioId}`);
+  return data;
+}
