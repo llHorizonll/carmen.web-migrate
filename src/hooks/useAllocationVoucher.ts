@@ -16,6 +16,7 @@ import {
   createAllocationJvDetail,
   updateAllocationJvDetail,
   delAllocationJvDetail,
+  postAllocationJvDetail,
 } from '../services/generalLedger';
 
 const QUERY_KEYS = {
@@ -120,6 +121,32 @@ export function useDeleteAllocationVoucher() {
       notifications.show({
         title: 'Error',
         message: error.message || 'Failed to void allocation voucher',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function usePostAllocationVoucher() {
+  const queryClient = useQueryClient();
+
+  return useMutation<AllocationVoucher, Error, number>({
+    mutationFn: (AJvhSeq) => postAllocationJvDetail(AJvhSeq),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.list] });
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.detail, data.AJvhSeq],
+      });
+      notifications.show({
+        title: 'Success',
+        message: 'Allocation voucher posted successfully',
+        color: 'green',
+      });
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to post allocation voucher',
         color: 'red',
       });
     },

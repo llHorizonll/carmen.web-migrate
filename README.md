@@ -47,6 +47,7 @@ This project is a migration of the **Carmen Accounting ERP System** from legacy 
 ### Testing
 - **Vitest** - Unit Testing
 - **React Testing Library** - Component Testing
+- **Playwright** - E2E Testing ⭐ NEW
 - **jsdom** - DOM Environment
 
 ### DevOps & Deployment
@@ -248,6 +249,12 @@ make deploy-prod         # Deploy to production
 ---
 
 ## 🏗️ Domain Modules
+
+### Authentication System ⭐ NEW
+- **Login Page** - Modern Mantine UI with form validation
+- **Auth Context** - Global authentication state management
+- **Protected Routes** - Route guards for authenticated access
+- **API Integration** - Carmen API with JWT token handling
 
 ### 1. General Ledger (GL)
 - Journal Voucher

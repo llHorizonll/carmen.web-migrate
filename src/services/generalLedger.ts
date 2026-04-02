@@ -109,6 +109,11 @@ export async function updateAllocationJvDetail(
   return data;
 }
 
+export async function postAllocationJvDetail(AJvhSeq: number): Promise<AllocationVoucher> {
+  const { data } = await axiosAuth.post(`/api/allocationJv/post/${AJvhSeq}`);
+  return data;
+}
+
 export async function delAllocationJvDetail(
   AJvhSeq: number,
   username: string,
