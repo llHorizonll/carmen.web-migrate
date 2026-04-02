@@ -4,7 +4,8 @@
  * Preserves exact same API behavior
  */
 
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import type { AxiosError} from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { notifications } from '@mantine/notifications';
 
 // ============================================================================
@@ -16,14 +17,20 @@ declare global {
     config: {
       apiUrl: string;
       adminToken: string;
-      arrCompany: Array<{
+      arrCompany: {
         name: string;
         apiUrl: string;
         adminToken: string;
-      }>;
+      }[];
     };
   }
 }
+
+// ============================================================================
+// Configuration
+// ============================================================================
+
+const CARMEN_API_BASE_URL = 'https://dev.carmen4.com/Carmen.api';
 
 // ============================================================================
 // Axios Instance
@@ -32,7 +39,7 @@ declare global {
 let showSnack = false;
 
 export const axiosAuth = axios.create({
-  baseURL: window.config?.apiUrl || '',
+  baseURL: window.config?.apiUrl || CARMEN_API_BASE_URL,
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
@@ -187,7 +194,7 @@ export async function getBaseUrl(): Promise<string> {
     }
   }
 
-  return window.config?.apiUrl || '';
+  return window.config?.apiUrl || CARMEN_API_BASE_URL;
 }
 
 export function resetSnack(): void {
