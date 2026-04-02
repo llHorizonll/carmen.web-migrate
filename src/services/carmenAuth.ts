@@ -35,17 +35,34 @@ export interface CarmenLoginRequest {
   UserName: string;
 }
 
+export interface Permission {
+  Seq: number;
+  Name: string;
+  View: boolean;
+  Add: boolean;
+  Update: boolean;
+  Delete: boolean;
+  Execute: boolean;
+  Print: boolean;
+}
+
 export interface CarmenLoginResponse {
+  SessionId: string;
   AccessToken: string;
+  AdminToken: string;
+  UserId: string;
+  UserName: string;
+  Email: string | null;
+  Photo: string | null;
+  Language: string;
+  Md5: string;
+  LastChangePass: string;
+  Tenant: string;
+  IsSupport: boolean;
+  Permissions: Permission[];
   RefreshToken?: string;
   ExpiresIn?: number;
   TokenType?: string;
-  User?: {
-    UserId: number;
-    UserName: string;
-    Email: string;
-    FullName?: string;
-  };
 }
 
 export interface CarmenUser {
@@ -86,8 +103,11 @@ export const carmenAxios = axios.create({
 
 carmenAxios.interceptors.request.use(
   async (config) => {
-    // Add Admin-Token header for all requests
-    config.headers['Admin-Token'] = CARMEN_ADMIN_TOKEN;
+    // Add adminToken as query parameter for login endpoint
+    if (config.url?.includes('/api/login') && config.method === 'post') {
+      const separator = config.url.includes('?') ? '&' : '?';
+      config.url = `${config.url}${separator}adminToken=${CARMEN_ADMIN_TOKEN}`;
+    }
     
     // Add Authorization header if we have an access token
     const token = getAccessToken();
@@ -136,17 +156,19 @@ carmenAxios.interceptors.response.use(
 
 /**
  * Login to Carmen API
- * POST /api/Login/Login
+ * POST /api/login?adminToken={token}
  * 
- * Note: The actual API endpoint behavior may vary based on server configuration.
- * The endpoint may require specific headers or different routing.
+ * The API requires:
+ * - URL: /api/login (lowercase)
+ * - Query parameter: adminToken
+ * - Body parameter: p (containing login credentials)
  */
 export async function carmenLogin(
   credentials: Partial<CarmenLoginRequest> = {}
 ): Promise<CarmenLoginResponse> {
   const defaultCredentials: CarmenLoginRequest = {
-    Email: 'admin@carmen.com',
-    Language: 'en-US',
+    Email: '',
+    Language: 'en',
     Tenant: 'dev',
     Password: 'alpha',
     UserName: 'admin',
@@ -157,24 +179,31 @@ export async function carmenLogin(
   console.log('[CarmenAuth] Attempting login with:', {
     UserName: loginData.UserName,
     Tenant: loginData.Tenant,
-    Email: loginData.Email,
+    Language: loginData.Language,
   });
 
   try {
+    // The API expects the login data directly (NOT wrapped in 'p')
     const response = await carmenAxios.post<CarmenLoginResponse>(
-      '/api/Login/Login',
+      '/api/login',
       loginData
     );
 
-    const { AccessToken, RefreshToken, ExpiresIn, User } = response.data;
+    const { AccessToken, RefreshToken, ExpiresIn, UserId, UserName, Email } = response.data;
 
     // Store tokens
     setAccessToken(AccessToken);
     if (RefreshToken) {
       setRefreshToken(RefreshToken);
     }
-    if (User) {
-      setStoredUser(User);
+    
+    // Store user info from response
+    if (UserId && UserName) {
+      setStoredUser({
+        UserId: parseInt(UserId, 10) || 0,
+        UserName,
+        Email: Email || '',
+      });
     }
 
     // Calculate and store expiry

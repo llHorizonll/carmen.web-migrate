@@ -1,0 +1,167 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: ar/receipt.spec.ts >> AR Receipt List Page >> page loads without errors
+- Location: tests/e2e/ar/receipt.spec.ts:14:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByText('AR Receipt')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByText('AR Receipt')
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - heading "Unexpected Application Error!" [level=2] [ref=e3]
+  - heading "404 Not Found" [level=3] [ref=e4]
+  - paragraph [ref=e5]: 💿 Hey developer 👋
+  - paragraph [ref=e6]:
+    - text: You can provide a way better UX than this when your app throws errors by providing your own
+    - code [ref=e7]: ErrorBoundary
+    - text: or
+    - code [ref=e8]: errorElement
+    - text: prop on your route.
+  - generic [ref=e9]:
+    - img [ref=e11]
+    - button "Open Tanstack query devtools" [ref=e59] [cursor=pointer]:
+      - img [ref=e60]
+```
+
+# Test source
+
+```ts
+  1   | import { test, expect } from '@playwright/test';
+  2   | 
+  3   | /**
+  4   |  * AR Receipt E2E Tests
+  5   |  * Tests the Accounts Receivable Receipt page functionality
+  6   |  */
+  7   | 
+  8   | test.describe('AR Receipt List Page', () => {
+  9   |   test.beforeEach(async ({ page }) => {
+  10  |     // Navigate to AR Receipt page
+  11  |     await page.goto('/ar/receipt');
+  12  |   });
+  13  | 
+  14  |   test('page loads without errors', async ({ page }) => {
+  15  |     // Verify page title
+> 16  |     await expect(page.getByText('AR Receipt')).toBeVisible();
+      |                                                ^ Error: expect(locator).toBeVisible() failed
+  17  |   });
+  18  | 
+  19  |   test('displays receipt data table', async ({ page }) => {
+  20  |     // Wait for table to be visible
+  21  |     await expect(page.locator('table, [role="table"]').first()).toBeVisible({ timeout: 10000 });
+  22  |     
+  23  |     // Check for column headers
+  24  |     const headers = ['Date', 'Receipt No.', 'Customer', 'Description', 'Currency', 'Amount', 'Base Amount', 'Status'];
+  25  |     for (const header of headers) {
+  26  |       await expect(page.getByText(header, { exact: false }).first()).toBeVisible();
+  27  |     }
+  28  |   });
+  29  | 
+  30  |   test('create button navigates to create page', async ({ page }) => {
+  31  |     // Find create button
+  32  |     const createButton = page.getByRole('button', { name: /create/i });
+  33  |     await expect(createButton).toBeVisible();
+  34  |     
+  35  |     await createButton.click();
+  36  |     
+  37  |     // Verify navigation
+  38  |     await expect(page).toHaveURL(/.*ar\/receipt\/create.*/);
+  39  |   });
+  40  | 
+  41  |   test('filter controls are functional', async ({ page }) => {
+  42  |     // Check for date range filters
+  43  |     const fromDateInput = page.getByLabel('From Date', { exact: false });
+  44  |     const toDateInput = page.getByLabel('To Date', { exact: false });
+  45  |     
+  46  |     await expect(fromDateInput).toBeVisible();
+  47  |     await expect(toDateInput).toBeVisible();
+  48  |     
+  49  |     // Check for Status filter
+  50  |     const statusSelect = page.getByLabel('Status', { exact: false });
+  51  |     await expect(statusSelect).toBeVisible();
+  52  |     
+  53  |     // Check for Search input
+  54  |     const searchInput = page.getByPlaceholder(/search receipt/i);
+  55  |     await expect(searchInput).toBeVisible();
+  56  |     
+  57  |     // Test date filter
+  58  |     await fromDateInput.fill('01/01/2024');
+  59  |     await toDateInput.fill('31/12/2024');
+  60  |     
+  61  |     // Test status filter
+  62  |     await statusSelect.click();
+  63  |     await page.getByRole('option', { name: 'Normal' }).click();
+  64  |     
+  65  |     // Test search
+  66  |     await searchInput.fill('RCPT-001');
+  67  |     await searchInput.clear();
+  68  |   });
+  69  | 
+  70  |   test('view action navigates to detail page', async ({ page }) => {
+  71  |     // Find first view button
+  72  |     const viewButton = page.locator('[data-testid="view-action"], button[title="View"], button:has(.tabler-icon-eye)').first();
+  73  |     
+  74  |     if (await viewButton.isVisible().catch(() => false)) {
+  75  |       await viewButton.click();
+  76  |       await expect(page).toHaveURL(/.*ar\/receipt\/\d+.*/);
+  77  |     } else {
+  78  |       test.skip();
+  79  |     }
+  80  |   });
+  81  | 
+  82  |   test('edit action navigates to edit page', async ({ page }) => {
+  83  |     // Find first edit button
+  84  |     const editButton = page.locator('[data-testid="edit-action"], button[title="Edit"], button:has(.tabler-icon-edit)').first();
+  85  |     
+  86  |     if (await editButton.isVisible().catch(() => false)) {
+  87  |       await editButton.click();
+  88  |       await expect(page).toHaveURL(/.*ar\/receipt\/\d+.*edit.*/);
+  89  |     } else {
+  90  |       test.skip();
+  91  |     }
+  92  |   });
+  93  | 
+  94  |   test('void receipts cannot be edited', async ({ page }) => {
+  95  |     // Look for void status rows and verify edit button is not present
+  96  |     const voidRows = page.locator('tr:has-text("Void")');
+  97  |     const voidCount = await voidRows.count();
+  98  |     
+  99  |     if (voidCount > 0) {
+  100 |       // Get the first void row
+  101 |       const firstVoidRow = voidRows.first();
+  102 |       
+  103 |       // Check that edit button is not present in void rows
+  104 |       const editButtonInVoid = firstVoidRow.locator('button[title="Edit"]');
+  105 |       await expect(editButtonInVoid).toHaveCount(0);
+  106 |     }
+  107 |   });
+  108 | 
+  109 |   test('pagination controls work', async ({ page }) => {
+  110 |     const pagination = page.locator('.mantine-Pagination-root, [role="navigation"]').first();
+  111 |     
+  112 |     if (await pagination.isVisible().catch(() => false)) {
+  113 |       const nextButton = pagination.locator('button').last();
+  114 |       
+  115 |       if (await nextButton.isEnabled().catch(() => false)) {
+  116 |         await nextButton.click();
+```
