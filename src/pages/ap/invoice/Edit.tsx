@@ -1,27 +1,24 @@
-import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Paper, Group, Button, Stack, Grid, Select, TextInput, NumberInput, LoadingOverlay } from '@mantine/core';
+import { Paper, Group, Button, Stack, Grid, TextInput, NumberInput, LoadingOverlay } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm, zodResolver } from '@mantine/form';
-import { IconX, IconCheck, IconCalculator } from '@tabler/icons-react';
+import { IconX, IconCheck } from '@tabler/icons-react';
 import { z } from 'zod';
+import { useEffect, useState } from 'react';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { InlineTable } from '../../../components/ui/InlineTable';
 import {
   useApInvoiceDetail,
   useUpdateApInvoice,
 } from '../../../hooks/useApInvoice';
-import { formatDate, toISODate, fromMySqlDate } from '../../../utils/formatter';
+import { formatDate, toISODate, fromMySqlDate, formatCurrency } from '../../../utils/formatter';
 import type { InlineColumn } from '../../../components/ui/InlineTable';
 import type { ApInvoiceDetail } from '../../../types';
 
 const schema = z.object({
-  InvNo: z.string().min(1, 'Invoice number is required'),
   InvDate: z.date({ required_error: 'Date is required' }),
-  VendorId: z.number({ required_error: 'Vendor is required' }),
-  CurCode: z.string().min(1, 'Currency is required'),
-  CurRate: z.number().min(0.01, 'Rate must be greater than 0'),
   Description: z.string().min(1, 'Description is required'),
+  CurRate: z.number().min(0.0001, 'Rate must be greater than 0'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -34,9 +31,10 @@ interface DetailLine {
   AccCode: string;
   Description: string;
   Amount: number;
-  VatCode: string;
+  AmountBase: number;
+  VatCode?: string;
   VatAmount: number;
-  WhtCode: string;
+  WhtCode?: string;
   WhtAmount: number;
   NetAmount: number;
 }
@@ -52,12 +50,9 @@ export default function ApInvoiceEdit() {
   const form = useForm<FormValues>({
     validate: zodResolver(schema),
     initialValues: {
-      InvNo: '',
       InvDate: new Date(),
-      VendorId: 0,
-      CurCode: 'THB',
-      CurRate: 1,
       Description: '',
+      CurRate: 1,
     },
   });
 
@@ -68,41 +63,20 @@ export default function ApInvoiceEdit() {
   useEffect(() => {
     if (invoice) {
       form.setValues({
-        InvNo: invoice.InvNo,
         InvDate: fromMySqlDate(invoice.InvDate) ?? new Date(),
-        VendorId: invoice.VendorId,
-        CurCode: invoice.CurCode,
-        CurRate: invoice.CurRate,
         Description: invoice.Description,
+        CurRate: invoice.CurRate,
       });
       const lines = (invoice.Detail ?? []).map((line, idx) => ({
         ...line,
         id: idx + 1,
-        VatCode: line.VatCode ?? '',
-        WhtCode: line.WhtCode ?? '',
       }));
       setDetailLines(lines);
       setNextId(lines.length + 1);
     }
   }, [invoice]);
 
-  // Calculate totals
-  const totals = useMemo(() => {
-    const invAmount = detailLines.reduce((sum, line) => sum + (line.Amount || 0), 0);
-    const vatAmount = detailLines.reduce((sum, line) => sum + (line.VatAmount || 0), 0);
-    const whtAmount = detailLines.reduce((sum, line) => sum + (line.WhtAmount || 0), 0);
-    const netAmount = invAmount + vatAmount - whtAmount;
-    return { invAmount, vatAmount, whtAmount, netAmount };
-  }, [detailLines]);
-
   const detailColumns: InlineColumn<DetailLine>[] = [
-    {
-      key: 'AccCode',
-      header: 'Account',
-      type: 'text',
-      width: 120,
-      editable: true,
-    },
     {
       key: 'DeptCode',
       header: 'Dept',
@@ -111,10 +85,17 @@ export default function ApInvoiceEdit() {
       editable: true,
     },
     {
+      key: 'AccCode',
+      header: 'Account',
+      type: 'text',
+      width: 120,
+      editable: true,
+    },
+    {
       key: 'Description',
       header: 'Description',
       type: 'text',
-      width: 250,
+      width: 200,
       editable: true,
     },
     {
@@ -132,9 +113,23 @@ export default function ApInvoiceEdit() {
       editable: true,
     },
     {
+      key: 'VatAmount',
+      header: 'VAT',
+      type: 'number',
+      width: 100,
+      editable: true,
+    },
+    {
       key: 'WhtCode',
       header: 'WHT Code',
       type: 'text',
+      width: 100,
+      editable: true,
+    },
+    {
+      key: 'WhtAmount',
+      header: 'WHT',
+      type: 'number',
       width: 100,
       editable: true,
     },
@@ -149,6 +144,7 @@ export default function ApInvoiceEdit() {
       AccCode: '',
       Description: '',
       Amount: 0,
+      AmountBase: 0,
       VatCode: '',
       VatAmount: 0,
       WhtCode: '',
@@ -163,39 +159,38 @@ export default function ApInvoiceEdit() {
     setDetailLines((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const calculateTotals = () => {
+    return detailLines.reduce(
+      (acc, line) => ({
+        invAmount: acc.invAmount + line.Amount,
+        vatAmount: acc.vatAmount + line.VatAmount,
+        whtAmount: acc.whtAmount + line.WhtAmount,
+      }),
+      { invAmount: 0, vatAmount: 0, whtAmount: 0 }
+    );
+  };
+
   const handleSubmit = async (values: FormValues) => {
     if (!invoice) return;
 
     try {
+      const totals = calculateTotals();
       const detailData: ApInvoiceDetail[] = detailLines.map((line, index) => ({
-        ApInvdSeq: line.ApInvdSeq,
-        ApInvhSeq: line.ApInvhSeq,
-        DeptCode: line.DeptCode,
-        AccCode: line.AccCode,
-        Description: line.Description,
-        Amount: line.Amount,
-        AmountBase: line.Amount * values.CurRate,
-        VatCode: line.VatCode || undefined,
-        VatAmount: line.VatAmount,
-        WhtCode: line.WhtCode || undefined,
-        WhtAmount: line.WhtAmount,
-        NetAmount: line.Amount + line.VatAmount - line.WhtAmount,
+        ...line,
         index,
+        AmountBase: line.Amount * values.CurRate,
       }));
 
       await updateMutation.mutateAsync({
-        ...(invoice as NonNullable<typeof invoice>),
-        InvNo: values.InvNo,
+        ...invoice,
         InvDate: toISODate(values.InvDate),
-        VendorId: values.VendorId,
         Description: values.Description,
-        CurCode: values.CurCode,
         CurRate: values.CurRate,
         InvAmount: totals.invAmount,
         InvAmountBase: totals.invAmount * values.CurRate,
         VatAmount: totals.vatAmount,
         WhtAmount: totals.whtAmount,
-        NetAmount: totals.netAmount,
+        NetAmount: totals.invAmount + totals.vatAmount - totals.whtAmount,
         Detail: detailData,
       });
       navigate('/ap/invoice');
@@ -209,13 +204,13 @@ export default function ApInvoiceEdit() {
   };
 
   const invoiceNo = invoice?.InvNo ?? '...';
-  const isVoid = invoice?.Status === 'Void';
+  const totals = calculateTotals();
 
   return (
     <div>
       <PageHeader
         title={`Edit AP Invoice: ${invoiceNo}`}
-        subtitle={`Date: ${formatDate(invoice?.InvDate)}`}
+        subtitle={`Created: ${formatDate(invoice?.InvDate)} | Vendor: ${invoice?.VendorName ?? ''}`}
         breadcrumbs={[
           { label: 'Home', href: '/dashboard' },
           { label: 'Accounts Payable' },
@@ -231,64 +226,44 @@ export default function ApInvoiceEdit() {
           <Stack gap="md">
             <Grid gutter="md">
               <Grid.Col span={3}>
-                <TextInput
-                  label="Invoice No"
-                  placeholder="Enter invoice number"
-                  required
-                  readOnly={isVoid}
-                  {...form.getInputProps('InvNo')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
                 <DatePickerInput
-                  label="Invoice Date"
+                  label="Date"
                   placeholder="Select date"
                   required
-                  readOnly={isVoid}
                   {...form.getInputProps('InvDate')}
                 />
               </Grid.Col>
               <Grid.Col span={6}>
-                <Select
+                <TextInput
                   label="Vendor"
-                  placeholder="Select vendor"
-                  required
-                  data={[]} // Will be populated from API
-                  readOnly={isVoid}
-                  {...form.getInputProps('VendorId')}
+                  value={invoice?.VendorName ?? ''}
+                  readOnly
                 />
               </Grid.Col>
-              <Grid.Col span={2}>
-                <Select
+              <Grid.Col span={3}>
+                <TextInput
                   label="Currency"
-                  placeholder="Select"
-                  required
-                  data={[
-                    { value: 'THB', label: 'THB' },
-                    { value: 'USD', label: 'USD' },
-                    { value: 'EUR', label: 'EUR' },
-                  ]}
-                  readOnly={isVoid}
-                  {...form.getInputProps('CurCode')}
+                  value={invoice?.CurCode ?? 'THB'}
+                  readOnly
                 />
               </Grid.Col>
+            </Grid>
+            <Grid gutter="md">
               <Grid.Col span={2}>
                 <NumberInput
                   label="Exchange Rate"
-                  placeholder="Rate"
+                  placeholder="Enter rate"
                   required
-                  min={0.01}
-                  decimalScale={6}
-                  readOnly={isVoid}
+                  min={0.0001}
+                  decimalScale={4}
                   {...form.getInputProps('CurRate')}
                 />
               </Grid.Col>
-              <Grid.Col span={8}>
+              <Grid.Col span={10}>
                 <TextInput
                   label="Description"
                   placeholder="Enter description"
                   required
-                  readOnly={isVoid}
                   {...form.getInputProps('Description')}
                 />
               </Grid.Col>
@@ -298,69 +273,60 @@ export default function ApInvoiceEdit() {
               data={detailLines}
               columns={detailColumns}
               onChange={setDetailLines}
-              onRowAdd={isVoid ? undefined : handleAddRow}
-              onRowDelete={isVoid ? undefined : handleDeleteRow}
-              readOnly={isVoid}
+              onRowAdd={handleAddRow}
+              onRowDelete={handleDeleteRow}
               maxHeight={400}
             />
 
             <Paper withBorder p="md">
               <Grid gutter="md">
                 <Grid.Col span={3}>
-                  <NumberInput
+                  <TextInput
                     label="Invoice Amount"
-                    value={totals.invAmount}
+                    value={formatCurrency(totals.invAmount, invoice?.CurCode)}
                     readOnly
-                    decimalScale={2}
-                    leftSection={<IconCalculator size={16} />}
                   />
                 </Grid.Col>
                 <Grid.Col span={3}>
-                  <NumberInput
+                  <TextInput
                     label="VAT Amount"
-                    value={totals.vatAmount}
+                    value={formatCurrency(totals.vatAmount, invoice?.CurCode)}
                     readOnly
-                    decimalScale={2}
                   />
                 </Grid.Col>
                 <Grid.Col span={3}>
-                  <NumberInput
+                  <TextInput
                     label="WHT Amount"
-                    value={totals.whtAmount}
+                    value={formatCurrency(totals.whtAmount, invoice?.CurCode)}
                     readOnly
-                    decimalScale={2}
                   />
                 </Grid.Col>
                 <Grid.Col span={3}>
-                  <NumberInput
+                  <TextInput
                     label="Net Amount"
-                    value={totals.netAmount}
+                    value={formatCurrency(totals.invAmount + totals.vatAmount - totals.whtAmount, invoice?.CurCode)}
                     readOnly
-                    decimalScale={2}
-                    styles={{ input: { fontWeight: 'bold' } }}
                   />
                 </Grid.Col>
               </Grid>
             </Paper>
 
-            {!isVoid && (
-              <Group justify="flex-end">
-                <Button
-                  variant="subtle"
-                  leftSection={<IconX size={16} />}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  leftSection={<IconCheck size={16} />}
-                  loading={updateMutation.isPending}
-                >
-                  Save
-                </Button>
-              </Group>
-            )}
+            <Group justify="flex-end">
+              <Button
+                variant="subtle"
+                leftSection={<IconX size={16} />}
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                leftSection={<IconCheck size={16} />}
+                loading={updateMutation.isPending}
+              >
+                Save
+              </Button>
+            </Group>
           </Stack>
         </form>
       </Paper>

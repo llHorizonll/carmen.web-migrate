@@ -76,9 +76,9 @@ export default function ArInvoiceEdit() {
   const detailColumns: InlineColumn<DetailLine>[] = [
     {
       key: 'DeptCode',
-      header: 'Dept',
+      header: 'Department',
       type: 'text',
-      width: 100,
+      width: 120,
       editable: true,
     },
     {
@@ -92,15 +92,16 @@ export default function ArInvoiceEdit() {
       key: 'Description',
       header: 'Description',
       type: 'text',
-      width: 200,
+      width: 250,
       editable: true,
     },
     {
       key: 'Amount',
       header: 'Amount',
       type: 'number',
-      width: 120,
+      width: 130,
       editable: true,
+      format: (value) => formatCurrency(value as number),
     },
     {
       key: 'VatCode',
@@ -111,10 +112,11 @@ export default function ArInvoiceEdit() {
     },
     {
       key: 'VatAmount',
-      header: 'VAT',
+      header: 'VAT Amount',
       type: 'number',
-      width: 100,
+      width: 120,
       editable: true,
+      format: (value) => formatCurrency(value as number),
     },
   ];
 
@@ -142,10 +144,10 @@ export default function ArInvoiceEdit() {
   const calculateTotals = () => {
     return detailLines.reduce(
       (acc, line) => ({
-        invAmount: acc.invAmount + line.Amount,
+        amount: acc.amount + line.Amount,
         vatAmount: acc.vatAmount + line.VatAmount,
       }),
-      { invAmount: 0, vatAmount: 0 }
+      { amount: 0, vatAmount: 0 }
     );
   };
 
@@ -163,13 +165,12 @@ export default function ArInvoiceEdit() {
       await updateMutation.mutateAsync({
         ...invoice,
         InvDate: toISODate(values.InvDate),
-
         Description: values.Description,
         CurRate: values.CurRate,
-        InvAmount: totals.invAmount,
-        InvAmountBase: totals.invAmount * values.CurRate,
+        InvAmount: totals.amount,
+        InvAmountBase: totals.amount * values.CurRate,
         VatAmount: totals.vatAmount,
-        NetAmount: totals.invAmount + totals.vatAmount,
+        NetAmount: totals.amount + totals.vatAmount,
         Detail: detailData,
       });
       navigate('/ar/invoice');
@@ -259,24 +260,24 @@ export default function ArInvoiceEdit() {
 
             <Paper withBorder p="md">
               <Grid gutter="md">
-                <Grid.Col span={4}>
+                <Grid.Col span={3}>
                   <TextInput
-                    label="Invoice Amount"
-                    value={formatCurrency(totals.invAmount, invoice?.CurCode)}
+                    label="Total Amount"
+                    value={formatCurrency(totals.amount, invoice?.CurCode)}
                     readOnly
                   />
                 </Grid.Col>
-                <Grid.Col span={4}>
+                <Grid.Col span={3}>
                   <TextInput
                     label="VAT Amount"
                     value={formatCurrency(totals.vatAmount, invoice?.CurCode)}
                     readOnly
                   />
                 </Grid.Col>
-                <Grid.Col span={4}>
+                <Grid.Col span={3}>
                   <TextInput
                     label="Net Amount"
-                    value={formatCurrency(totals.invAmount + totals.vatAmount, invoice?.CurCode)}
+                    value={formatCurrency(totals.amount + totals.vatAmount, invoice?.CurCode)}
                     readOnly
                   />
                 </Grid.Col>

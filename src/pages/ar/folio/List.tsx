@@ -1,208 +1,280 @@
 import { useState, useMemo } from 'react';
-import { Paper, Select, Group, Text } from '@mantine/core';
-import { PageHeader } from '../../../components/ui/PageHeader';
+import { useNavigate, useSearchParams } from 'react-router';
+import {
+  Box,
+  Button,
+  Group,
+  Text,
+  Stack,
+  Paper,
+  Grid,
+} from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { notifications } from '@mantine/notifications';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { DataTable } from '../../../components/ui/DataTable';
-import { FilterPanel, type FilterField } from '../../../components/ui/FilterPanel';
-import { useArFolioList } from '../../../hooks/useArProfile';
-import { useArProfileList } from '../../../hooks/useArProfile';
-import { formatDate, formatCurrency } from '../../../utils/formatter';
-import type { ArFolio } from '../../../types';
-import type { ColumnDef } from '@tanstack/react-table';
+import { useArFolioList, useArFolioBalance } from '../../../hooks/useArProfile';
+import type { ArFolio, ArFolioFilterParams } from '../../../types';
+import { startOfMonth, endOfMonth, format } from 'date-fns';
+
+const PAGE_SIZE = 50;
 
 export default function ArFolioList() {
-  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
-  const [filters, setFilters] = useState<{
-    FromDate?: Date | null;
-    ToDate?: Date | null;
-  }>({});
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const profileIdParam = searchParams.get('profileId');
+  const profileId = profileIdParam ? parseInt(profileIdParam, 10) : 0;
 
-  // Get profiles for dropdown
-  const { data: profilesData } = useArProfileList({
-    Page: 1,
-    Limit: 1000,
-    IsActive: true,
-  });
+  // Filter states
+  const [page, setPage] = useState(0);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
+    startOfMonth(new Date()),
+    endOfMonth(new Date()),
+  ]);
 
-  const { data: folioData, isLoading } = useArFolioList({
-    ProfileId: selectedProfileId ?? 0,
-    FromDate: filters.FromDate ? formatDate(filters.FromDate) : undefined,
-    ToDate: filters.ToDate ? formatDate(filters.ToDate) : undefined,
-  });
+  // Calculate filter params
+  const filterParams: ArFolioFilterParams = useMemo(() => {
+    const params: ArFolioFilterParams = {
+      ProfileId: profileId,
+    };
 
-  const profileOptions = useMemo(() => {
-    const profiles = profilesData?.Data ?? [];
-    return [
-      { value: '', label: 'Select Customer' },
-      ...profiles.map((p) => ({ value: String(p.ProfileId), label: `${p.ProfileCode} - ${p.ProfileName}` })),
-    ];
-  }, [profilesData]);
+    if (dateRange[0]) {
+      params.FromDate = format(dateRange[0], 'yyyy-MM-dd');
+    }
+    if (dateRange[1]) {
+      params.ToDate = format(dateRange[1], 'yyyy-MM-dd');
+    }
 
-  const filterFields: FilterField[] = useMemo(
-    () => [
-      {
-        key: 'FromDate',
-        label: 'From Date',
-        type: 'date',
-      },
-      {
-        key: 'ToDate',
-        label: 'To Date',
-        type: 'date',
-      },
-    ],
-    []
-  );
+    return params;
+  }, [profileId, dateRange]);
 
-  const columns: ColumnDef<ArFolio>[] = useMemo(
+  // Fetch folio data and balance
+  const { data: folioData, isLoading, error } = useArFolioList(filterParams);
+  const { data: balanceData } = useArFolioBalance(profileId);
+
+  // Handle error
+  if (error) {
+    notifications.show({
+      title: 'Error',
+      message: error.message || 'Failed to load AR folio',
+      color: 'red',
+    });
+  }
+
+  // Table columns
+  const columns = useMemo(
     () => [
       {
         accessorKey: 'TransDate',
         header: 'Date',
-        cell: ({ row }) => formatDate(row.original.TransDate),
+        size: 100,
+        cell: ({ row }: { row: { original: ArFolio } }) => {
+          const date = row.original.TransDate;
+          return date ? format(new Date(date), 'dd/MM/yyyy') : '-';
+        },
       },
       {
         accessorKey: 'TransType',
         header: 'Type',
+        size: 80,
       },
       {
         accessorKey: 'TransNo',
-        header: 'Document No',
+        header: 'Document No.',
+        size: 120,
       },
       {
         accessorKey: 'Description',
         header: 'Description',
+        size: 300,
+        cell: ({ row }: { row: { original: ArFolio } }) => (
+          <Text truncate size="sm" style={{ maxWidth: 280 }}>
+            {row.original.Description}
+          </Text>
+        ),
       },
       {
         accessorKey: 'Debit',
         header: 'Debit',
-        cell: ({ row }) => formatCurrency(row.original.Debit),
-        meta: { align: 'right' },
+        size: 120,
+        cell: ({ row }: { row: { original: ArFolio } }) => (
+          <Text size="sm" ta="right">
+            {row.original.Debit > 0
+              ? row.original.Debit.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              : '-'}
+          </Text>
+        ),
       },
       {
         accessorKey: 'Credit',
         header: 'Credit',
-        cell: ({ row }) => formatCurrency(row.original.Credit),
-        meta: { align: 'right' },
+        size: 120,
+        cell: ({ row }: { row: { original: ArFolio } }) => (
+          <Text size="sm" ta="right">
+            {row.original.Credit > 0
+              ? row.original.Credit.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              : '-'}
+          </Text>
+        ),
       },
       {
         accessorKey: 'Balance',
         header: 'Balance',
-        cell: ({ row }) => formatCurrency(row.original.Balance),
-        meta: { align: 'right' },
+        size: 120,
+        cell: ({ row }: { row: { original: ArFolio } }) => {
+          const balance = row.original.Balance;
+          return (
+            <Text
+              size="sm"
+              ta="right"
+              fw={500}
+              c={balance > 0 ? 'red' : balance < 0 ? 'green' : 'dimmed'}
+            >
+              {balance.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </Text>
+          );
+        },
       },
     ],
     []
   );
 
-  const handleApplyFilters = () => {
-    // Filters are applied automatically via state change
-  };
+  const records = folioData || [];
+  const totalRecords = records.length;
 
-  const handleResetFilters = () => {
-    setFilters({});
-  };
-
-  const calculateTotals = () => {
-    if (!folioData) return { totalDebit: 0, totalCredit: 0, currentBalance: 0 };
-    
-    const totalDebit = folioData.reduce((sum, item) => sum + item.Debit, 0);
-    const totalCredit = folioData.reduce((sum, item) => sum + item.Credit, 0);
-    const currentBalance = folioData.length > 0 
-      ? folioData[folioData.length - 1].Balance 
-      : 0;
-    
-    return { totalDebit, totalCredit, currentBalance };
-  };
-
-  const { totalDebit, totalCredit, currentBalance } = calculateTotals();
-  const selectedProfile = profilesData?.Data?.find(p => p.ProfileId === selectedProfileId);
+  // Calculate totals
+  const totals = useMemo(() => {
+    return records.reduce(
+      (acc, item) => ({
+        debit: acc.debit + (item.Debit || 0),
+        credit: acc.credit + (item.Credit || 0),
+      }),
+      { debit: 0, credit: 0 }
+    );
+  }, [records]);
 
   return (
-    <div>
-      <PageHeader
-        title="AR Folio"
-        subtitle="View customer transaction history and running balance"
-        breadcrumbs={[
-          { label: 'Home', href: '/dashboard' },
-          { label: 'Accounts Receivable' },
-          { label: 'Folio' },
-        ]}
-      />
-
-      <Paper withBorder p="md" mb="md">
-        <Group>
-          <Select
-            label="Customer"
-            placeholder="Select customer to view folio"
-            data={profileOptions}
-            value={selectedProfileId ? String(selectedProfileId) : ''}
-            onChange={(value) => setSelectedProfileId(value ? parseInt(value, 10) : null)}
-            searchable
-            clearable
-            style={{ minWidth: 400 }}
-          />
-          {selectedProfile && (
-            <div>
-              <Text size="sm" c="dimmed">Credit Limit</Text>
-              <Text fw={500}>{formatCurrency(selectedProfile.CreditLimit, selectedProfile.CurCode)}</Text>
-            </div>
-          )}
+    <Box p="md">
+      <Stack gap="md">
+        {/* Header */}
+        <Group justify="space-between">
+          <Group>
+            <Button
+              variant="subtle"
+              leftSection={<IconArrowLeft size={18} />}
+              onClick={() => navigate('/ar/profile')}
+            >
+              Back
+            </Button>
+            <Text size="xl" fw={600}>
+              AR Folio
+            </Text>
+          </Group>
         </Group>
-      </Paper>
 
-      {selectedProfileId ? (
-        <>
-          <FilterPanel
-            fields={filterFields}
-            values={filters}
-            onChange={(values) => setFilters((prev) => ({ ...prev, ...values }))}
-            onApply={handleApplyFilters}
-            onReset={handleResetFilters}
-            loading={isLoading}
-            showSearch={false}
-          />
-
-          <Paper withBorder p="md">
-            <DataTable
-              data={folioData ?? []}
-              columns={columns}
-              loading={isLoading}
-              totalRows={folioData?.length ?? 0}
-              pagination={{
-                pageIndex: 0,
-                pageSize: folioData?.length ?? 20,
-                onPageChange: () => {},
-              }}
-              emptyMessage="No transactions found for this customer"
-            />
-          </Paper>
-
-          <Paper withBorder p="md" mt="md">
-            <Group justify="space-between">
-              <Group>
-                <div>
-                  <Text size="sm" c="dimmed">Total Debit</Text>
-                  <Text fw={500} c="green">{formatCurrency(totalDebit)}</Text>
-                </div>
-                <div>
-                  <Text size="sm" c="dimmed">Total Credit</Text>
-                  <Text fw={500} c="red">{formatCurrency(totalCredit)}</Text>
-                </div>
-              </Group>
-              <div>
+        {/* Profile Info */}
+        {balanceData && (
+          <Paper p="md" withBorder>
+            <Grid>
+              <Grid.Col span={4}>
+                <Text size="sm" c="dimmed">Profile Code</Text>
+                <Text fw={500}>{balanceData.ProfileCode}</Text>
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <Text size="sm" c="dimmed">Profile Name</Text>
+                <Text fw={500}>{balanceData.ProfileName}</Text>
+              </Grid.Col>
+              <Grid.Col span={4}>
                 <Text size="sm" c="dimmed">Current Balance</Text>
-                <Text fw={700} size="lg" c={currentBalance >= 0 ? 'blue' : 'red'}>
-                  {formatCurrency(currentBalance)}
+                <Text
+                  fw={600}
+                  size="lg"
+                  c={balanceData.Balance > 0 ? 'red' : balanceData.Balance < 0 ? 'green' : 'dimmed'}
+                >
+                  {balanceData.Balance.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Text>
-              </div>
+              </Grid.Col>
+            </Grid>
+          </Paper>
+        )}
+
+        {/* Filters */}
+        <Group gap="sm" align="flex-end">
+          <DatePickerInput
+            label="From Date"
+            value={dateRange[0]}
+            onChange={(value) => {
+              setDateRange([value as Date | null, dateRange[1]]);
+              setPage(0);
+            }}
+            style={{ width: 140 }}
+          />
+          <DatePickerInput
+            label="To Date"
+            value={dateRange[1]}
+            onChange={(value) => {
+              setDateRange([dateRange[0], value as Date | null]);
+              setPage(0);
+            }}
+            minDate={dateRange[0] || undefined}
+            style={{ width: 140 }}
+          />
+        </Group>
+
+        {/* Data Table */}
+        <DataTable
+          data={records}
+          columns={columns}
+          loading={isLoading}
+          totalRows={totalRecords}
+          pagination={{
+            pageIndex: page,
+            pageSize: PAGE_SIZE,
+            onPageChange: setPage,
+          }}
+          emptyMessage="No folio transactions found"
+        />
+
+        {/* Totals */}
+        {records.length > 0 && (
+          <Paper p="md" withBorder>
+            <Group justify="flex-end">
+              <Stack gap={4} style={{ minWidth: 250 }}>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Total Debit:</Text>
+                  <Text size="sm" fw={500}>
+                    {totals.debit.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Total Credit:</Text>
+                  <Text size="sm" fw={500}>
+                    {totals.credit.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Text>
+                </Group>
+              </Stack>
             </Group>
           </Paper>
-        </>
-      ) : (
-        <Paper withBorder p="xl" ta="center">
-          <Text c="dimmed">Select a customer to view their folio</Text>
-        </Paper>
-      )}
-    </div>
+        )}
+      </Stack>
+    </Box>
   );
 }

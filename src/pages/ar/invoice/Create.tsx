@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { InlineTable } from '../../../components/ui/InlineTable';
 import { useCreateArInvoice } from '../../../hooks/useArInvoice';
-import { toISODate } from '../../../utils/formatter';
+import { toISODate, formatCurrency } from '../../../utils/formatter';
 import type { InlineColumn } from '../../../components/ui/InlineTable';
 import type { ArInvoiceDetail } from '../../../types';
 
@@ -56,9 +56,9 @@ export default function ArInvoiceCreate() {
   const detailColumns: InlineColumn<DetailLine>[] = [
     {
       key: 'DeptCode',
-      header: 'Dept',
+      header: 'Department',
       type: 'text',
-      width: 100,
+      width: 120,
       editable: true,
     },
     {
@@ -72,15 +72,16 @@ export default function ArInvoiceCreate() {
       key: 'Description',
       header: 'Description',
       type: 'text',
-      width: 200,
+      width: 250,
       editable: true,
     },
     {
       key: 'Amount',
       header: 'Amount',
       type: 'number',
-      width: 120,
+      width: 130,
       editable: true,
+      format: (value) => formatCurrency(value as number),
     },
     {
       key: 'VatCode',
@@ -91,10 +92,11 @@ export default function ArInvoiceCreate() {
     },
     {
       key: 'VatAmount',
-      header: 'VAT',
+      header: 'VAT Amount',
       type: 'number',
-      width: 100,
+      width: 120,
       editable: true,
+      format: (value) => formatCurrency(value as number),
     },
   ];
 
@@ -122,10 +124,10 @@ export default function ArInvoiceCreate() {
   const calculateTotals = () => {
     return detailLines.reduce(
       (acc, line) => ({
-        invAmount: acc.invAmount + line.Amount,
+        amount: acc.amount + line.Amount,
         vatAmount: acc.vatAmount + line.VatAmount,
       }),
-      { invAmount: 0, vatAmount: 0 }
+      { amount: 0, vatAmount: 0 }
     );
   };
 
@@ -141,17 +143,16 @@ export default function ArInvoiceCreate() {
       await createMutation.mutateAsync({
         InvDate: toISODate(values.InvDate),
         InvNo: '',
-
         ProfileId: values.ProfileId,
         ProfileCode: '',
         ProfileName: '',
         Description: values.Description,
         CurCode: values.CurCode,
         CurRate: values.CurRate,
-        InvAmount: totals.invAmount,
-        InvAmountBase: totals.invAmount * values.CurRate,
+        InvAmount: totals.amount,
+        InvAmountBase: totals.amount * values.CurRate,
         VatAmount: totals.vatAmount,
-        NetAmount: totals.invAmount + totals.vatAmount,
+        NetAmount: totals.amount + totals.vatAmount,
         Status: 'Draft',
         Detail: detailData,
         UserModified: '',
@@ -250,24 +251,24 @@ export default function ArInvoiceCreate() {
 
           <Paper withBorder p="md">
             <Grid gutter="md">
-              <Grid.Col span={4}>
+              <Grid.Col span={3}>
                 <TextInput
-                  label="Invoice Amount"
-                  value={totals.invAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  label="Total Amount"
+                  value={formatCurrency(totals.amount, form.values.CurCode)}
                   readOnly
                 />
               </Grid.Col>
-              <Grid.Col span={4}>
+              <Grid.Col span={3}>
                 <TextInput
                   label="VAT Amount"
-                  value={totals.vatAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  value={formatCurrency(totals.vatAmount, form.values.CurCode)}
                   readOnly
                 />
               </Grid.Col>
-              <Grid.Col span={4}>
+              <Grid.Col span={3}>
                 <TextInput
                   label="Net Amount"
-                  value={(totals.invAmount + totals.vatAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  value={formatCurrency(totals.amount + totals.vatAmount, form.values.CurCode)}
                   readOnly
                 />
               </Grid.Col>

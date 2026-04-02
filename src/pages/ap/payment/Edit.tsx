@@ -1,30 +1,26 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Paper, Group, Button, Stack, Grid, Select, TextInput, NumberInput, LoadingOverlay } from '@mantine/core';
+import { Paper, Group, Button, Stack, Grid, TextInput, NumberInput, LoadingOverlay } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm, zodResolver } from '@mantine/form';
 import { IconX, IconCheck } from '@tabler/icons-react';
 import { z } from 'zod';
+import { useEffect, useState } from 'react';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { InlineTable } from '../../../components/ui/InlineTable';
 import {
   useApPaymentDetail,
   useUpdateApPayment,
 } from '../../../hooks/useApPayment';
-import { formatDate, toISODate, fromMySqlDate } from '../../../utils/formatter';
+import { formatDate, toISODate, fromMySqlDate, formatCurrency } from '../../../utils/formatter';
 import type { InlineColumn } from '../../../components/ui/InlineTable';
 import type { ApPaymentDetail } from '../../../types';
 
 const schema = z.object({
-  PmtNo: z.string().min(1, 'Payment number is required'),
   PmtDate: z.date({ required_error: 'Date is required' }),
-  VendorId: z.number({ required_error: 'Vendor is required' }),
-  CurCode: z.string().min(1, 'Currency is required'),
-  CurRate: z.number().min(0.01, 'Rate must be greater than 0'),
+  Description: z.string().min(1, 'Description is required'),
+  CurRate: z.number().min(0.0001, 'Rate must be greater than 0'),
   BankCode: z.string().optional(),
   ChqNo: z.string().optional(),
-  ChqDate: z.date().optional(),
-  Description: z.string().min(1, 'Description is required'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -51,15 +47,11 @@ export default function ApPaymentEdit() {
   const form = useForm<FormValues>({
     validate: zodResolver(schema),
     initialValues: {
-      PmtNo: '',
       PmtDate: new Date(),
-      VendorId: 0,
-      CurCode: 'THB',
+      Description: '',
       CurRate: 1,
       BankCode: '',
       ChqNo: '',
-      ChqDate: undefined,
-      Description: '',
     },
   });
 
@@ -70,15 +62,11 @@ export default function ApPaymentEdit() {
   useEffect(() => {
     if (payment) {
       form.setValues({
-        PmtNo: payment.PmtNo,
         PmtDate: fromMySqlDate(payment.PmtDate) ?? new Date(),
-        VendorId: payment.VendorId,
-        CurCode: payment.CurCode,
+        Description: payment.Description,
         CurRate: payment.CurRate,
         BankCode: payment.BankCode ?? '',
         ChqNo: payment.ChqNo ?? '',
-        ChqDate: payment.ChqDate ? (fromMySqlDate(payment.ChqDate) ?? undefined) : undefined,
-        Description: payment.Description,
       });
       const lines = (payment.Detail ?? []).map((line, idx) => ({
         ...line,
@@ -88,8 +76,6 @@ export default function ApPaymentEdit() {
       setNextId(lines.length + 1);
     }
   }, [payment]);
-
-  const totalPayment = detailLines.reduce((sum, line) => sum + (line.PmtAmount || 0), 0);
 
   const detailColumns: InlineColumn<DetailLine>[] = [
     {
@@ -103,21 +89,21 @@ export default function ApPaymentEdit() {
       key: 'InvAmount',
       header: 'Invoice Amount',
       type: 'number',
-      width: 130,
-      editable: false,
+      width: 150,
+      editable: true,
     },
     {
       key: 'InvBalance',
       header: 'Balance',
       type: 'number',
-      width: 130,
-      editable: false,
+      width: 150,
+      editable: true,
     },
     {
       key: 'PmtAmount',
       header: 'Payment Amount',
       type: 'number',
-      width: 130,
+      width: 150,
       editable: true,
     },
   ];
@@ -141,34 +127,34 @@ export default function ApPaymentEdit() {
     setDetailLines((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const calculateTotals = () => {
+    return detailLines.reduce(
+      (acc, line) => ({
+        pmtAmount: acc.pmtAmount + line.PmtAmount,
+      }),
+      { pmtAmount: 0 }
+    );
+  };
+
   const handleSubmit = async (values: FormValues) => {
     if (!payment) return;
 
     try {
+      const totals = calculateTotals();
       const detailData: ApPaymentDetail[] = detailLines.map((line, index) => ({
-        ApPmtdSeq: line.ApPmtdSeq,
-        ApPmtSeq: line.ApPmtSeq,
-        ApInvhSeq: line.ApInvhSeq,
-        InvNo: line.InvNo,
-        InvAmount: line.InvAmount,
-        InvBalance: line.InvBalance,
-        PmtAmount: line.PmtAmount,
+        ...line,
         index,
       }));
 
       await updateMutation.mutateAsync({
-        ...(payment as NonNullable<typeof payment>),
-        PmtNo: values.PmtNo,
+        ...payment,
         PmtDate: toISODate(values.PmtDate),
-        VendorId: values.VendorId,
         Description: values.Description,
-        CurCode: values.CurCode,
         CurRate: values.CurRate,
-        PmtAmount: totalPayment,
-        PmtAmountBase: totalPayment * values.CurRate,
+        PmtAmount: totals.pmtAmount,
+        PmtAmountBase: totals.pmtAmount * values.CurRate,
         BankCode: values.BankCode,
         ChqNo: values.ChqNo,
-        ChqDate: values.ChqDate ? toISODate(values.ChqDate) : undefined,
         Detail: detailData,
       });
       navigate('/ap/payment');
@@ -182,13 +168,13 @@ export default function ApPaymentEdit() {
   };
 
   const paymentNo = payment?.PmtNo ?? '...';
-  const isVoid = payment?.Status === 'Void';
+  const totals = calculateTotals();
 
   return (
     <div>
       <PageHeader
         title={`Edit AP Payment: ${paymentNo}`}
-        subtitle={`Date: ${formatDate(payment?.PmtDate)}`}
+        subtitle={`Created: ${formatDate(payment?.PmtDate)} | Vendor: ${payment?.VendorName ?? ''}`}
         breadcrumbs={[
           { label: 'Home', href: '/dashboard' },
           { label: 'Accounts Payable' },
@@ -204,63 +190,43 @@ export default function ApPaymentEdit() {
           <Stack gap="md">
             <Grid gutter="md">
               <Grid.Col span={3}>
-                <TextInput
-                  label="Payment No"
-                  placeholder="Enter payment number"
-                  required
-                  readOnly={isVoid}
-                  {...form.getInputProps('PmtNo')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
                 <DatePickerInput
-                  label="Payment Date"
+                  label="Date"
                   placeholder="Select date"
                   required
-                  readOnly={isVoid}
                   {...form.getInputProps('PmtDate')}
                 />
               </Grid.Col>
               <Grid.Col span={6}>
-                <Select
+                <TextInput
                   label="Vendor"
-                  placeholder="Select vendor"
-                  required
-                  data={[]} // Will be populated from API
-                  readOnly={isVoid}
-                  {...form.getInputProps('VendorId')}
+                  value={payment?.VendorName ?? ''}
+                  readOnly
                 />
               </Grid.Col>
-              <Grid.Col span={2}>
-                <Select
+              <Grid.Col span={3}>
+                <TextInput
                   label="Currency"
-                  placeholder="Select"
-                  required
-                  data={[
-                    { value: 'THB', label: 'THB' },
-                    { value: 'USD', label: 'USD' },
-                    { value: 'EUR', label: 'EUR' },
-                  ]}
-                  readOnly={isVoid}
-                  {...form.getInputProps('CurCode')}
+                  value={payment?.CurCode ?? 'THB'}
+                  readOnly
                 />
               </Grid.Col>
+            </Grid>
+            <Grid gutter="md">
               <Grid.Col span={2}>
                 <NumberInput
                   label="Exchange Rate"
-                  placeholder="Rate"
+                  placeholder="Enter rate"
                   required
-                  min={0.01}
-                  decimalScale={6}
-                  readOnly={isVoid}
+                  min={0.0001}
+                  decimalScale={4}
                   {...form.getInputProps('CurRate')}
                 />
               </Grid.Col>
               <Grid.Col span={3}>
                 <TextInput
-                  label="Bank Code"
-                  placeholder="Enter bank code"
-                  readOnly={isVoid}
+                  label="Bank"
+                  placeholder="Select bank"
                   {...form.getInputProps('BankCode')}
                 />
               </Grid.Col>
@@ -268,24 +234,14 @@ export default function ApPaymentEdit() {
                 <TextInput
                   label="Cheque No"
                   placeholder="Enter cheque number"
-                  readOnly={isVoid}
                   {...form.getInputProps('ChqNo')}
                 />
               </Grid.Col>
-              <Grid.Col span={2}>
-                <DatePickerInput
-                  label="Cheque Date"
-                  placeholder="Select date"
-                  readOnly={isVoid}
-                  {...form.getInputProps('ChqDate')}
-                />
-              </Grid.Col>
-              <Grid.Col span={12}>
+              <Grid.Col span={4}>
                 <TextInput
                   label="Description"
                   placeholder="Enter description"
                   required
-                  readOnly={isVoid}
                   {...form.getInputProps('Description')}
                 />
               </Grid.Col>
@@ -295,52 +251,39 @@ export default function ApPaymentEdit() {
               data={detailLines}
               columns={detailColumns}
               onChange={setDetailLines}
-              onRowAdd={isVoid ? undefined : handleAddRow}
-              onRowDelete={isVoid ? undefined : handleDeleteRow}
-              readOnly={isVoid}
+              onRowAdd={handleAddRow}
+              onRowDelete={handleDeleteRow}
               maxHeight={400}
             />
 
             <Paper withBorder p="md">
               <Grid gutter="md">
-                <Grid.Col span={4}>
-                  <NumberInput
+                <Grid.Col span={3}>
+                  <TextInput
                     label="Total Payment Amount"
-                    value={totalPayment}
+                    value={formatCurrency(totals.pmtAmount, payment?.CurCode)}
                     readOnly
-                    decimalScale={2}
-                    styles={{ input: { fontWeight: 'bold' } }}
-                  />
-                </Grid.Col>
-                <Grid.Col span={4}>
-                  <NumberInput
-                    label="Payment Amount (Base)"
-                    value={totalPayment * (form.values.CurRate || 1)}
-                    readOnly
-                    decimalScale={2}
                   />
                 </Grid.Col>
               </Grid>
             </Paper>
 
-            {!isVoid && (
-              <Group justify="flex-end">
-                <Button
-                  variant="subtle"
-                  leftSection={<IconX size={16} />}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  leftSection={<IconCheck size={16} />}
-                  loading={updateMutation.isPending}
-                >
-                  Save
-                </Button>
-              </Group>
-            )}
+            <Group justify="flex-end">
+              <Button
+                variant="subtle"
+                leftSection={<IconX size={16} />}
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                leftSection={<IconCheck size={16} />}
+                loading={updateMutation.isPending}
+              >
+                Save
+              </Button>
+            </Group>
           </Stack>
         </form>
       </Paper>

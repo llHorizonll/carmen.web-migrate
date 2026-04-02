@@ -259,7 +259,7 @@ export interface ArProfile {
   ProfileCode: string;
   ProfileName: string;
   ArTypeId: number;
-  ArTypeName: string;
+  ArTypeName?: string;
   TitleId?: number;
   TitleName?: string;
   OwnerId?: number;
@@ -271,8 +271,8 @@ export interface ArProfile {
   ContactPerson?: string;
   Phone?: string;
   Email?: string;
-  CreditLimit: number;
-  CurCode: string;
+  CreditLimit?: number;
+  CurCode?: string;
   IsActive: boolean;
 }
 

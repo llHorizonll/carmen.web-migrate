@@ -1,165 +1,293 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Paper, Button } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
-import { PageHeader } from '../../../components/ui/PageHeader';
+import {
+  Box,
+  Button,
+  Group,
+  Text,
+  Stack,
+  ActionIcon,
+  Tooltip,
+  Select,
+  TextInput,
+} from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import { IconSearch, IconPlus, IconEye, IconEdit } from '@tabler/icons-react';
 import { DataTable } from '../../../components/ui/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
-import { FilterPanel, type FilterField } from '../../../components/ui/FilterPanel';
-import { useArProfileList } from '../../../hooks/useArProfile';
-import { formatCurrency } from '../../../utils/formatter';
-import type { ArProfile } from '../../../types';
-import type { ColumnDef } from '@tanstack/react-table';
+import { useArProfileList, useArTypeList } from '../../../hooks/useArProfile';
+import type { ArProfile, ArProfileFilterParams } from '../../../types';
+
+const PAGE_SIZE = 50;
 
 export default function ArProfileList() {
   const navigate = useNavigate();
 
-  const [filters, setFilters] = useState<{
-    Page: number;
-    Limit: number;
-    IsActive?: boolean;
-  }>({
-    Page: 1,
-    Limit: 20,
-  });
-  const [searchQuery, setSearchQuery] = useState('');
+  // Filter states
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebouncedValue(search, 300);
+  const [arTypeId, setArTypeId] = useState<string | null>(null);
+  const [isActive, setIsActive] = useState<string>('true');
 
-  const { data, isLoading } = useArProfileList({
-    Page: filters.Page,
-    Limit: filters.Limit,
-    IsActive: filters.IsActive,
-    Search: searchQuery || undefined,
-  });
+  // Fetch AR types for filter
+  const { data: arTypes } = useArTypeList();
 
-  const filterFields: FilterField[] = useMemo(
+  // Calculate filter params
+  const filterParams: ArProfileFilterParams = useMemo(() => {
+    const params: ArProfileFilterParams = {
+      Limit: PAGE_SIZE,
+      Page: page + 1,
+      OrderBy: 'ProfileCode',
+    };
+
+    // Build WhereGroupList
+    const whereGroupList = [];
+
+    // Active filter
+    if (isActive !== 'all') {
+      whereGroupList.push({
+        AndOr: 'And' as const,
+        ConditionList: [
+          {
+            AndOr: 'And' as const,
+            Field: 'IsActive',
+            Operator: '=',
+            Value: isActive === 'true' ? '1' : '0',
+          },
+        ],
+      });
+    }
+
+    // AR Type filter
+    if (arTypeId) {
+      if (whereGroupList.length > 0) {
+        whereGroupList[0].ConditionList.push({
+          AndOr: 'And' as const,
+          Field: 'ArTypeId',
+          Operator: '=',
+          Value: arTypeId,
+        });
+      }
+    }
+
+    // Search filter
+    if (debouncedSearch) {
+      params.WhereLike = `%${debouncedSearch}%`;
+      params.WhereLikeFields = 'ProfileCode,ProfileName,ContactPerson,Phone';
+    }
+
+    if (whereGroupList.length > 0) {
+      params.WhereGroupList = whereGroupList;
+    }
+
+    return params;
+  }, [page, isActive, arTypeId, debouncedSearch]);
+
+  // Fetch data
+  const { data, isLoading, error } = useArProfileList(filterParams);
+
+  // Handle error
+  if (error) {
+    notifications.show({
+      title: 'Error',
+      message: error.message || 'Failed to load AR profiles',
+      color: 'red',
+    });
+  }
+
+  // AR Type options
+  const arTypeOptions = useMemo(() => {
+    const options = [{ value: '', label: 'All Types' }];
+    if (arTypes) {
+      arTypes.forEach((type) => {
+        options.push({
+          value: type.ArTypeId.toString(),
+          label: type.ArTypeName,
+        });
+      });
+    }
+    return options;
+  }, [arTypes]);
+
+  // Table columns
+  const columns = useMemo(
     () => [
       {
-        key: 'IsActive',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { value: '', label: 'All' },
-          { value: 'true', label: 'Active' },
-          { value: 'false', label: 'Inactive' },
-        ],
+        id: 'actions',
+        header: '',
+        size: 80,
+        cell: ({ row }: { row: { original: ArProfile } }) => (
+          <Group gap={4}>
+            <Tooltip label="View">
+              <ActionIcon
+                variant="subtle"
+                color="blue"
+                onClick={() => navigate(`/ar/profile/${row.original.ProfileId}`)}
+              >
+                <IconEye size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Edit">
+              <ActionIcon
+                variant="subtle"
+                color="green"
+                onClick={() => navigate(`/ar/profile/${row.original.ProfileId}/edit`)}
+              >
+                <IconEdit size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        ),
       },
-    ],
-    []
-  );
-
-  const columns: ColumnDef<ArProfile>[] = useMemo(
-    () => [
       {
         accessorKey: 'ProfileCode',
         header: 'Code',
+        size: 100,
       },
       {
         accessorKey: 'ProfileName',
         header: 'Name',
+        size: 250,
+        cell: ({ row }: { row: { original: ArProfile } }) => (
+          <Tooltip label={row.original.ProfileName} position="top" withArrow>
+            <Text truncate size="sm" style={{ maxWidth: 230 }}>
+              {row.original.ProfileName}
+            </Text>
+          </Tooltip>
+        ),
       },
       {
         accessorKey: 'ArTypeName',
-        header: 'Type',
+        header: 'AR Type',
+        size: 120,
+      },
+      {
+        accessorKey: 'ContactPerson',
+        header: 'Contact',
+        size: 150,
+        cell: ({ row }: { row: { original: ArProfile } }) => (
+          <Text size="sm" truncate>
+            {row.original.ContactPerson || '-'}
+          </Text>
+        ),
+      },
+      {
+        accessorKey: 'Phone',
+        header: 'Phone',
+        size: 120,
+        cell: ({ row }: { row: { original: ArProfile } }) => (
+          <Text size="sm">{row.original.Phone || '-'}</Text>
+        ),
       },
       {
         accessorKey: 'CreditLimit',
         header: 'Credit Limit',
-        cell: ({ row }) => formatCurrency(row.original.CreditLimit, row.original.CurCode),
+        size: 120,
+        cell: ({ row }: { row: { original: ArProfile } }) => (
+          <Text size="sm" ta="right">
+            {(row.original.CreditLimit || 0).toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </Text>
+        ),
       },
       {
         accessorKey: 'CurCode',
         header: 'Currency',
+        size: 80,
       },
       {
         accessorKey: 'IsActive',
         header: 'Status',
-        cell: ({ row }) => (
-          <StatusBadge status={row.original.IsActive ? 'Active' : 'Inactive'} />
+        size: 90,
+        cell: ({ row }: { row: { original: ArProfile } }) => (
+          <StatusBadge
+            status={row.original.IsActive ? 'Active' : 'Inactive'}
+            variant="light"
+          />
         ),
       },
     ],
-    []
+    [navigate]
   );
 
-  const handleRowClick = (row: ArProfile) => {
-    navigate(`/ar/profile/${row.ProfileId}`);
-  };
-
-  const handleApplyFilters = () => {
-    setFilters((prev) => ({ ...prev, Page: 1 }));
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
-      Page: 1,
-      Limit: 20,
-    });
-    setSearchQuery('');
-  };
-
-  const handlePageChange = (pageIndex: number) => {
-    setFilters((prev) => ({ ...prev, Page: pageIndex + 1 }));
-  };
-
-  const profiles = data?.Data ?? [];
-  const totalRows = data?.Total ?? 0;
+  const records = data?.Data || [];
+  const totalRecords = data?.Total || 0;
 
   return (
-    <div>
-      <PageHeader
-        title="AR Profiles"
-        subtitle="Manage customer profiles"
-        breadcrumbs={[
-          { label: 'Home', href: '/dashboard' },
-          { label: 'Accounts Receivable' },
-          { label: 'Profiles' },
-        ]}
-        actions={
+    <Box p="md">
+      <Stack gap="md">
+        {/* Header */}
+        <Group justify="space-between">
+          <Text size="xl" fw={600}>
+            AR Profile
+          </Text>
           <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={() => navigate('/ar/profile/new')}
+            leftSection={<IconPlus size={18} />}
+            onClick={() => navigate('/ar/profile/create')}
           >
-            New Profile
+            Create
           </Button>
-        }
-      />
+        </Group>
 
-      <FilterPanel
-        fields={filterFields}
-        values={filters}
-        onChange={(values) =>
-          setFilters((prev) => ({
-            ...prev,
-            ...values,
-            IsActive:
-              values.IsActive === ''
-                ? undefined
-                : values.IsActive === 'true',
-          }))
-        }
-        onApply={handleApplyFilters}
-        onReset={handleResetFilters}
-        loading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search profiles..."
-      />
+        {/* Filters */}
+        <Group gap="sm" align="flex-end">
+          <Select
+            label="AR Type"
+            value={arTypeId || ''}
+            onChange={(value) => {
+              setArTypeId(value || null);
+              setPage(0);
+            }}
+            data={arTypeOptions}
+            style={{ width: 150 }}
+          />
 
-      <Paper withBorder p="md">
+          <Select
+            label="Status"
+            value={isActive}
+            onChange={(value) => {
+              setIsActive(value || 'true');
+              setPage(0);
+            }}
+            data={[
+              { value: 'all', label: 'All' },
+              { value: 'true', label: 'Active' },
+              { value: 'false', label: 'Inactive' },
+            ]}
+            style={{ width: 120 }}
+          />
+
+          <TextInput
+            label="Search"
+            placeholder="Search code, name, contact..."
+            leftSection={<IconSearch size={16} />}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.currentTarget.value);
+              setPage(0);
+            }}
+            style={{ width: 280 }}
+          />
+        </Group>
+
+        {/* Data Table */}
         <DataTable
-          data={profiles}
+          data={records}
           columns={columns}
           loading={isLoading}
-          totalRows={totalRows}
+          totalRows={totalRecords}
           pagination={{
-            pageIndex: (filters.Page ?? 1) - 1,
-            pageSize: filters.Limit ?? 20,
-            onPageChange: handlePageChange,
+            pageIndex: page,
+            pageSize: PAGE_SIZE,
+            onPageChange: setPage,
           }}
-          onRowClick={handleRowClick}
           emptyMessage="No AR profiles found"
         />
-      </Paper>
-    </div>
+      </Stack>
+    </Box>
   );
 }

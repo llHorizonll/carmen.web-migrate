@@ -1,0 +1,27 @@
+.container {
+  background: var(--mantine-color-body);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.headerCell {
+  background: var(--mantine-color-gray-0);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background: var(--mantine-color-gray-1);
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover {
+  background: var(--mantine-color-blue-0) !important;
+}

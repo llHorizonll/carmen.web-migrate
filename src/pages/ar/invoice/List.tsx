@@ -6,7 +6,9 @@ import { PageHeader } from '../../../components/ui/PageHeader';
 import { DataTable } from '../../../components/ui/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { FilterPanel, type FilterField } from '../../../components/ui/FilterPanel';
-import { useArInvoiceList } from '../../../hooks/useArInvoice';
+import {
+  useArInvoiceList,
+} from '../../../hooks/useArInvoice';
 import { formatDate, formatCurrency } from '../../../utils/formatter';
 import type { ArInvoice } from '../../../types';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -76,6 +78,10 @@ export default function ArInvoiceList() {
       {
         accessorKey: 'ProfileName',
         header: 'Customer',
+      },
+      {
+        accessorKey: 'Description',
+        header: 'Description',
       },
       {
         accessorKey: 'InvAmount',

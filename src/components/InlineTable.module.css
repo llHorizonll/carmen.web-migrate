@@ -1,0 +1,20 @@
+.tableContainer {
+  overflow: auto;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.editableCell {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--mantine-color-gray-4);
+  border-radius: var(--mantine-radius-xs);
+  background: var(--mantine-color-white);
+  font-size: var(--mantine-font-size-sm);
+}
+
+.editableCell:focus {
+  outline: none;
+  border-color: var(--mantine-color-blue-5);
+  box-shadow: 0 0 0 1px var(--mantine-color-blue-5);
+}

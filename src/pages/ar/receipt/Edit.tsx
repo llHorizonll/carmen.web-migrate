@@ -1,310 +1,151 @@
 import { useNavigate, useParams } from 'react-router';
-import { Paper, Group, Button, Stack, Grid, TextInput, NumberInput, LoadingOverlay } from '@mantine/core';
+import { Paper, Button, Group, Stack, TextInput, Select, NumberInput } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { useForm, zodResolver } from '@mantine/form';
-import { IconX, IconCheck } from '@tabler/icons-react';
-import { z } from 'zod';
-import { useEffect, useState } from 'react';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { IconCheck, IconX } from '@tabler/icons-react';
+import { useEffect } from 'react';
 import { PageHeader } from '../../../components/ui/PageHeader';
-import { InlineTable } from '../../../components/ui/InlineTable';
-import {
-  useArReceiptDetail,
-  useUpdateArReceipt,
-} from '../../../hooks/useArReceipt';
-import { formatDate, toISODate, fromMySqlDate, formatCurrency } from '../../../utils/formatter';
-import type { InlineColumn } from '../../../components/ui/InlineTable';
-import type { ArReceiptDetail } from '../../../types';
-
-const schema = z.object({
-  RcptDate: z.date({ required_error: 'Date is required' }),
-  Description: z.string().min(1, 'Description is required'),
-  CurRate: z.number().min(0.0001, 'Rate must be greater than 0'),
-  BankCode: z.string().optional(),
-  ChqNo: z.string().optional(),
-  ChqDate: z.date().optional().nullable(),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-interface DetailLine {
-  id: number;
-  ArRcptdSeq: number;
-  ArRcptSeq: number;
-  ArInvhSeq: number;
-  InvNo: string;
-  InvAmount: number;
-  InvBalance: number;
-  RcptAmount: number;
-}
+import { useArReceiptDetail, useUpdateArReceipt } from '../../../hooks/useArReceipt';
+import type { ArReceipt } from '../../../types/models';
 
 export default function ArReceiptEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const ArRcptSeq = parseInt(id ?? '0', 10);
+  const receiptId = parseInt(id ?? '0', 10);
 
-  const { data: receipt, isLoading } = useArReceiptDetail(ArRcptSeq);
+  const { data: receipt, isLoading } = useArReceiptDetail(receiptId);
   const updateMutation = useUpdateArReceipt();
 
-  const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+  const form = useForm({
     initialValues: {
       RcptDate: new Date(),
-      Description: '',
+      ProfileId: 0,
+      RcptAmount: 0,
+      CurCode: 'THB',
       CurRate: 1,
+      Description: '',
       BankCode: '',
-      ChqNo: '',
-      ChqDate: null,
     },
   });
 
-  const [detailLines, setDetailLines] = useState<DetailLine[]>([]);
-  const [nextId, setNextId] = useState(1);
-
-  // Populate form when data is loaded
   useEffect(() => {
     if (receipt) {
       form.setValues({
-        RcptDate: fromMySqlDate(receipt.RcptDate) ?? new Date(),
-        Description: receipt.Description,
+        RcptDate: new Date(receipt.RcptDate),
+        ProfileId: receipt.ProfileId,
+        RcptAmount: receipt.RcptAmount,
+        CurCode: receipt.CurCode,
         CurRate: receipt.CurRate,
-        BankCode: receipt.BankCode ?? '',
-        ChqNo: receipt.ChqNo ?? '',
-        ChqDate: receipt.ChqDate ? fromMySqlDate(receipt.ChqDate) : null,
+        Description: receipt.Description || '',
+        BankCode: receipt.BankCode || '',
       });
-      const lines = (receipt.Detail ?? []).map((line, idx) => ({
-        ...line,
-        id: idx + 1,
-      }));
-      setDetailLines(lines);
-      setNextId(lines.length + 1);
     }
   }, [receipt]);
 
-  const detailColumns: InlineColumn<DetailLine>[] = [
-    {
-      key: 'InvNo',
-      header: 'Invoice No',
-      type: 'text',
-      width: 150,
-      editable: true,
-    },
-    {
-      key: 'InvAmount',
-      header: 'Invoice Amount',
-      type: 'number',
-      width: 130,
-      editable: false,
-      format: (value) => formatCurrency(value as number),
-    },
-    {
-      key: 'InvBalance',
-      header: 'Balance',
-      type: 'number',
-      width: 130,
-      editable: false,
-      format: (value) => formatCurrency(value as number),
-    },
-    {
-      key: 'RcptAmount',
-      header: 'Receipt Amount',
-      type: 'number',
-      width: 130,
-      editable: true,
-      format: (value) => formatCurrency(value as number),
-    },
-  ];
-
-  const handleAddRow = () => {
-    const newRow: DetailLine = {
-      id: nextId,
-      ArRcptdSeq: 0,
-      ArRcptSeq,
-      ArInvhSeq: 0,
-      InvNo: '',
-      InvAmount: 0,
-      InvBalance: 0,
-      RcptAmount: 0,
-    };
-    setDetailLines((prev) => [...prev, newRow]);
-    setNextId((prev) => prev + 1);
-  };
-
-  const handleDeleteRow = (index: number) => {
-    setDetailLines((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const calculateTotals = () => {
-    return detailLines.reduce(
-      (acc, line) => ({
-        rcptAmount: acc.rcptAmount + line.RcptAmount,
-      }),
-      { rcptAmount: 0 }
-    );
-  };
-
-  const handleSubmit = async (values: FormValues) => {
-    if (!receipt) return;
-
+  const handleSubmit = async (values: typeof form.values) => {
     try {
-      const totals = calculateTotals();
-      const detailData: ArReceiptDetail[] = detailLines.map((line, index) => ({
-        ...line,
-        index,
-      }));
-
-      await updateMutation.mutateAsync({
+      if (!receipt) return;
+      const payload: ArReceipt = {
         ...receipt,
-        RcptDate: toISODate(values.RcptDate),
-
-        Description: values.Description,
-        CurRate: values.CurRate,
-        RcptAmount: totals.rcptAmount,
-        RcptAmountBase: totals.rcptAmount * values.CurRate,
-        BankCode: values.BankCode,
-        ChqNo: values.ChqNo,
-        ChqDate: values.ChqDate ? toISODate(values.ChqDate) : undefined,
-        Detail: detailData,
+        ...values,
+        RcptDate: values.RcptDate.toISOString().split('T')[0],
+        RcptAmountBase: values.RcptAmount * values.CurRate,
+      };
+      await updateMutation.mutateAsync(payload);
+      notifications.show({
+        title: 'Success',
+        message: 'Receipt updated successfully',
+        color: 'green',
+        icon: <IconCheck size={16} />,
       });
       navigate('/ar/receipt');
-    } catch (error) {
-      // Error is handled by the mutation
+    } catch {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to update receipt',
+        color: 'red',
+        icon: <IconX size={16} />,
+      });
     }
   };
 
-  const handleCancel = () => {
-    navigate('/ar/receipt');
-  };
-
-  const receiptNo = receipt?.RcptNo ?? '...';
-  const totals = calculateTotals();
+  if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div>
+    <Stack gap="md">
       <PageHeader
-        title={`Edit AR Receipt: ${receiptNo}`}
-        subtitle={`Created: ${formatDate(receipt?.RcptDate)} | Customer: ${receipt?.ProfileName ?? ''}`}
+        title={`Edit Receipt: ${receipt?.RcptNo}`}
         breadcrumbs={[
-          { label: 'Home', href: '/dashboard' },
-          { label: 'Accounts Receivable' },
+          { label: 'AR', href: '/ar' },
           { label: 'Receipts', href: '/ar/receipt' },
-          { label: receiptNo },
+          { label: 'Edit' },
         ]}
       />
 
-      <Paper withBorder p="md" pos="relative">
-        <LoadingOverlay visible={isLoading} overlayProps={{ blur: 2 }} />
-
+      <Paper withBorder p="md">
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="md">
-            <Grid gutter="md">
-              <Grid.Col span={3}>
-                <DatePickerInput
-                  label="Date"
-                  placeholder="Select date"
-                  required
-                  {...form.getInputProps('RcptDate')}
-                />
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <TextInput
-                  label="Customer"
-                  value={receipt?.ProfileName ?? ''}
-                  readOnly
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Currency"
-                  value={receipt?.CurCode ?? 'THB'}
-                  readOnly
-                />
-              </Grid.Col>
-            </Grid>
-            <Grid gutter="md">
-              <Grid.Col span={2}>
-                <NumberInput
-                  label="Exchange Rate"
-                  placeholder="Enter rate"
-                  required
-                  min={0.0001}
-                  decimalScale={4}
-                  {...form.getInputProps('CurRate')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Bank Code"
-                  placeholder="Enter bank code"
-                  {...form.getInputProps('BankCode')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Cheque No"
-                  placeholder="Enter cheque no"
-                  {...form.getInputProps('ChqNo')}
-                />
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <DatePickerInput
-                  label="Cheque Date"
-                  placeholder="Select cheque date"
-                  clearable
-                  {...form.getInputProps('ChqDate')}
-                />
-              </Grid.Col>
-            </Grid>
-            <Grid gutter="md">
-              <Grid.Col span={12}>
-                <TextInput
-                  label="Description"
-                  placeholder="Enter description"
-                  required
-                  {...form.getInputProps('Description')}
-                />
-              </Grid.Col>
-            </Grid>
+            <Group grow>
+              <DatePickerInput
+                label="Receipt Date"
+                required
+                {...form.getInputProps('RcptDate')}
+              />
+              <Select
+                label="Payment Method"
+                data={[
+                  { value: '', label: 'Cash' },
+                  { value: 'CHQ', label: 'Cheque' },
+                  { value: 'TRF', label: 'Bank Transfer' },
+                  { value: 'CC', label: 'Credit Card' },
+                ]}
+                {...form.getInputProps('BankCode')}
+              />
+            </Group>
 
-            <InlineTable
-              data={detailLines}
-              columns={detailColumns}
-              onChange={setDetailLines}
-              onRowAdd={handleAddRow}
-              onRowDelete={handleDeleteRow}
-              maxHeight={400}
+            <NumberInput
+              label="Profile ID"
+              required
+              min={1}
+              {...form.getInputProps('ProfileId')}
             />
 
-            <Paper withBorder p="md">
-              <Grid gutter="md">
-                <Grid.Col span={4}>
-                  <TextInput
-                    label="Total Receipt Amount"
-                    value={formatCurrency(totals.rcptAmount, receipt?.CurCode)}
-                    readOnly
-                  />
-                </Grid.Col>
-              </Grid>
-            </Paper>
+            <Group grow>
+              <NumberInput
+                label="Amount"
+                required
+                min={0}
+                decimalScale={2}
+                {...form.getInputProps('RcptAmount')}
+              />
+              <TextInput
+                label="Currency"
+                {...form.getInputProps('CurCode')}
+              />
+              <NumberInput
+                label="Exchange Rate"
+                decimalScale={4}
+                {...form.getInputProps('CurRate')}
+              />
+            </Group>
 
-            <Group justify="flex-end">
-              <Button
-                variant="subtle"
-                leftSection={<IconX size={16} />}
-                onClick={handleCancel}
-              >
+            <TextInput
+              label="Description"
+              {...form.getInputProps('Description')}
+            />
+
+            <Group justify="flex-end" mt="md">
+              <Button variant="light" onClick={() => navigate('/ar/receipt')}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                leftSection={<IconCheck size={16} />}
-                loading={updateMutation.isPending}
-              >
-                Save
+              <Button type="submit" loading={updateMutation.isPending}>
+                Update Receipt
               </Button>
             </Group>
           </Stack>
         </form>
       </Paper>
-    </div>
+    </Stack>
   );
 }

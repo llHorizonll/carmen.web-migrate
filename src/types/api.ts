@@ -132,6 +132,7 @@ export interface ArFolioFilterParams {
 export interface AssetFilterParams extends UriQueryString {
   CategoryId?: number;
   DepartmentId?: number;
+  LocationId?: number;
   Status?: string;
   Search?: string;
 }

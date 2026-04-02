@@ -13,15 +13,13 @@ import type { InlineColumn } from '../../../components/ui/InlineTable';
 import type { ApPaymentDetail } from '../../../types';
 
 const schema = z.object({
-  PmtNo: z.string().min(1, 'Payment number is required'),
   PmtDate: z.date({ required_error: 'Date is required' }),
   VendorId: z.number({ required_error: 'Vendor is required' }),
+  Description: z.string().min(1, 'Description is required'),
   CurCode: z.string().min(1, 'Currency is required'),
-  CurRate: z.number().min(0.01, 'Rate must be greater than 0'),
+  CurRate: z.number().min(0.0001, 'Rate must be greater than 0'),
   BankCode: z.string().optional(),
   ChqNo: z.string().optional(),
-  ChqDate: z.date().optional(),
-  Description: z.string().min(1, 'Description is required'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -44,22 +42,18 @@ export default function ApPaymentCreate() {
   const form = useForm<FormValues>({
     validate: zodResolver(schema),
     initialValues: {
-      PmtNo: '',
       PmtDate: new Date(),
       VendorId: 0,
+      Description: '',
       CurCode: 'THB',
       CurRate: 1,
       BankCode: '',
       ChqNo: '',
-      ChqDate: undefined,
-      Description: '',
     },
   });
 
   const [detailLines, setDetailLines] = useState<DetailLine[]>([]);
   const [nextId, setNextId] = useState(1);
-
-  const totalPayment = detailLines.reduce((sum, line) => sum + (line.PmtAmount || 0), 0);
 
   const detailColumns: InlineColumn<DetailLine>[] = [
     {
@@ -73,21 +67,21 @@ export default function ApPaymentCreate() {
       key: 'InvAmount',
       header: 'Invoice Amount',
       type: 'number',
-      width: 130,
-      editable: false,
+      width: 150,
+      editable: true,
     },
     {
       key: 'InvBalance',
       header: 'Balance',
       type: 'number',
-      width: 130,
-      editable: false,
+      width: 150,
+      editable: true,
     },
     {
       key: 'PmtAmount',
       header: 'Payment Amount',
       type: 'number',
-      width: 130,
+      width: 150,
       editable: true,
     },
   ];
@@ -111,21 +105,25 @@ export default function ApPaymentCreate() {
     setDetailLines((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const calculateTotals = () => {
+    return detailLines.reduce(
+      (acc, line) => ({
+        pmtAmount: acc.pmtAmount + line.PmtAmount,
+      }),
+      { pmtAmount: 0 }
+    );
+  };
+
   const handleSubmit = async (values: FormValues) => {
     try {
+      const totals = calculateTotals();
       const detailData: ApPaymentDetail[] = detailLines.map((line, index) => ({
-        ApPmtdSeq: 0,
-        ApPmtSeq: 0,
-        ApInvhSeq: line.ApInvhSeq,
-        InvNo: line.InvNo,
-        InvAmount: line.InvAmount,
-        InvBalance: line.InvBalance,
-        PmtAmount: line.PmtAmount,
+        ...line,
         index,
       }));
 
       await createMutation.mutateAsync({
-        PmtNo: values.PmtNo,
+        PmtNo: '',
         PmtDate: toISODate(values.PmtDate),
         VendorId: values.VendorId,
         VendorCode: '',
@@ -133,11 +131,11 @@ export default function ApPaymentCreate() {
         Description: values.Description,
         CurCode: values.CurCode,
         CurRate: values.CurRate,
-        PmtAmount: totalPayment,
-        PmtAmountBase: totalPayment * values.CurRate,
+        PmtAmount: totals.pmtAmount,
+        PmtAmountBase: totals.pmtAmount * values.CurRate,
         BankCode: values.BankCode,
         ChqNo: values.ChqNo,
-        ChqDate: values.ChqDate ? toISODate(values.ChqDate) : undefined,
+        ChqDate: toISODate(values.PmtDate),
         Status: 'Draft',
         Detail: detailData,
         UserModified: '',
@@ -151,6 +149,8 @@ export default function ApPaymentCreate() {
   const handleCancel = () => {
     navigate('/ap/payment');
   };
+
+  const totals = calculateTotals();
 
   return (
     <div>
@@ -170,34 +170,25 @@ export default function ApPaymentCreate() {
           <Paper withBorder p="md">
             <Grid gutter="md">
               <Grid.Col span={3}>
-                <TextInput
-                  label="Payment No"
-                  placeholder="Enter payment number"
-                  required
-                  {...form.getInputProps('PmtNo')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
                 <DatePickerInput
-                  label="Payment Date"
+                  label="Date"
                   placeholder="Select date"
                   required
                   {...form.getInputProps('PmtDate')}
                 />
               </Grid.Col>
               <Grid.Col span={6}>
-                <Select
+                <TextInput
                   label="Vendor"
                   placeholder="Select vendor"
                   required
-                  data={[]} // Will be populated from API
                   {...form.getInputProps('VendorId')}
                 />
               </Grid.Col>
-              <Grid.Col span={2}>
+              <Grid.Col span={3}>
                 <Select
                   label="Currency"
-                  placeholder="Select"
+                  placeholder="Select currency"
                   required
                   data={[
                     { value: 'THB', label: 'THB' },
@@ -207,20 +198,22 @@ export default function ApPaymentCreate() {
                   {...form.getInputProps('CurCode')}
                 />
               </Grid.Col>
+            </Grid>
+            <Grid gutter="md" mt="xs">
               <Grid.Col span={2}>
                 <NumberInput
                   label="Exchange Rate"
-                  placeholder="Rate"
+                  placeholder="Enter rate"
                   required
-                  min={0.01}
-                  decimalScale={6}
+                  min={0.0001}
+                  decimalScale={4}
                   {...form.getInputProps('CurRate')}
                 />
               </Grid.Col>
               <Grid.Col span={3}>
                 <TextInput
-                  label="Bank Code"
-                  placeholder="Enter bank code"
+                  label="Bank"
+                  placeholder="Select bank"
                   {...form.getInputProps('BankCode')}
                 />
               </Grid.Col>
@@ -231,14 +224,7 @@ export default function ApPaymentCreate() {
                   {...form.getInputProps('ChqNo')}
                 />
               </Grid.Col>
-              <Grid.Col span={2}>
-                <DatePickerInput
-                  label="Cheque Date"
-                  placeholder="Select date"
-                  {...form.getInputProps('ChqDate')}
-                />
-              </Grid.Col>
-              <Grid.Col span={12}>
+              <Grid.Col span={4}>
                 <TextInput
                   label="Description"
                   placeholder="Enter description"
@@ -262,21 +248,11 @@ export default function ApPaymentCreate() {
 
           <Paper withBorder p="md">
             <Grid gutter="md">
-              <Grid.Col span={4}>
-                <NumberInput
+              <Grid.Col span={3}>
+                <TextInput
                   label="Total Payment Amount"
-                  value={totalPayment}
+                  value={totals.pmtAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   readOnly
-                  decimalScale={2}
-                  styles={{ input: { fontWeight: 'bold' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <NumberInput
-                  label="Payment Amount (Base)"
-                  value={totalPayment * (form.values.CurRate || 1)}
-                  readOnly
-                  decimalScale={2}
                 />
               </Grid.Col>
             </Grid>

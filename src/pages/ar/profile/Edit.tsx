@@ -1,285 +1,181 @@
 import { useNavigate, useParams } from 'react-router';
-import { Paper, Group, Button, Stack, Grid, TextInput, Select, NumberInput, LoadingOverlay } from '@mantine/core';
-import { useForm, zodResolver } from '@mantine/form';
-import { IconX, IconCheck } from '@tabler/icons-react';
-import { z } from 'zod';
+import { Paper, Button, Group, Stack, TextInput, Select, Textarea } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { IconCheck, IconX, IconTrash } from '@tabler/icons-react';
 import { useEffect } from 'react';
 import { PageHeader } from '../../../components/ui/PageHeader';
-import {
-  useArProfileDetail,
-  useUpdateArProfile,
-} from '../../../hooks/useArProfile';
-
-
-const schema = z.object({
-  ProfileCode: z.string().min(1, 'Profile code is required'),
-  ProfileName: z.string().min(1, 'Profile name is required'),
-  ArTypeId: z.number({ required_error: 'AR type is required' }),
-  TitleId: z.number().optional(),
-  OwnerId: z.number().optional(),
-  ProjectId: z.number().optional(),
-  Address: z.string().optional(),
-  TaxId: z.string().optional(),
-  ContactPerson: z.string().optional(),
-  Phone: z.string().optional(),
-  Email: z.string().email('Invalid email').optional().or(z.literal('')),
-  CreditLimit: z.number().min(0, 'Credit limit must be positive'),
-  CurCode: z.string().min(1, 'Currency is required'),
-  IsActive: z.boolean(),
-});
-
-type FormValues = z.infer<typeof schema>;
+import { useArProfileDetail, useUpdateArProfile, useDeleteArProfile } from '../../../hooks/useArProfile';
 
 export default function ArProfileEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const ProfileId = parseInt(id ?? '0', 10);
+  const profileId = parseInt(id ?? '0', 10);
 
-  const { data: profile, isLoading } = useArProfileDetail(ProfileId);
+  const { data: profile, isLoading } = useArProfileDetail(profileId);
   const updateMutation = useUpdateArProfile();
+  const deleteMutation = useDeleteArProfile();
 
-  const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+  const form = useForm({
     initialValues: {
       ProfileCode: '',
       ProfileName: '',
-      ArTypeId: 0,
-      TitleId: undefined,
-      OwnerId: undefined,
-      ProjectId: undefined,
-      Address: '',
-      TaxId: '',
       ContactPerson: '',
       Phone: '',
       Email: '',
-      CreditLimit: 0,
-      CurCode: 'THB',
+      Address: '',
+      TaxId: '',
+      ArTypeId: 1,
       IsActive: true,
     },
   });
 
-  // Populate form when data is loaded
   useEffect(() => {
     if (profile) {
       form.setValues({
         ProfileCode: profile.ProfileCode,
         ProfileName: profile.ProfileName,
+        ContactPerson: profile.ContactPerson || '',
+        Phone: profile.Phone || '',
+        Email: profile.Email || '',
+        Address: profile.Address || '',
+        TaxId: profile.TaxId || '',
         ArTypeId: profile.ArTypeId,
-        TitleId: profile.TitleId,
-        OwnerId: profile.OwnerId,
-        ProjectId: profile.ProjectId,
-        Address: profile.Address ?? '',
-        TaxId: profile.TaxId ?? '',
-        ContactPerson: profile.ContactPerson ?? '',
-        Phone: profile.Phone ?? '',
-        Email: profile.Email ?? '',
-        CreditLimit: profile.CreditLimit,
-        CurCode: profile.CurCode,
         IsActive: profile.IsActive,
       });
     }
   }, [profile]);
 
-  const handleSubmit = async (values: FormValues) => {
-    if (!profile) return;
-
+  const handleSubmit = async (values: typeof form.values) => {
     try {
-      await updateMutation.mutateAsync({
-        ...profile,
-        ProfileCode: values.ProfileCode,
-        ProfileName: values.ProfileName,
-        ArTypeId: values.ArTypeId,
-        TitleId: values.TitleId,
-        OwnerId: values.OwnerId,
-        ProjectId: values.ProjectId,
-        Address: values.Address,
-        TaxId: values.TaxId,
-        ContactPerson: values.ContactPerson,
-        Phone: values.Phone,
-        Email: values.Email,
-        CreditLimit: values.CreditLimit,
-        CurCode: values.CurCode,
-        IsActive: values.IsActive,
+      await updateMutation.mutateAsync({ ProfileId: profileId, ...values });
+      notifications.show({
+        title: 'Success',
+        message: 'Profile updated successfully',
+        color: 'green',
+        icon: <IconCheck size={16} />,
       });
       navigate('/ar/profile');
-    } catch (error) {
-      // Error is handled by the mutation
+    } catch {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to update profile',
+        color: 'red',
+        icon: <IconX size={16} />,
+      });
     }
   };
 
-  const handleCancel = () => {
-    navigate('/ar/profile');
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(profileId);
+      notifications.show({
+        title: 'Success',
+        message: 'Profile deleted successfully',
+        color: 'green',
+        icon: <IconCheck size={16} />,
+      });
+      navigate('/ar/profile');
+    } catch {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to delete profile',
+        color: 'red',
+        icon: <IconX size={16} />,
+      });
+    }
   };
 
-  const profileCode = profile?.ProfileCode ?? '...';
+  if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div>
+    <Stack gap="md">
       <PageHeader
-        title={`Edit AR Profile: ${profileCode}`}
-        subtitle={`${profile?.ProfileName ?? ''}`}
+        title={`Edit Profile: ${profile?.ProfileCode}`}
         breadcrumbs={[
-          { label: 'Home', href: '/dashboard' },
-          { label: 'Accounts Receivable' },
+          { label: 'AR', href: '/ar' },
           { label: 'Profiles', href: '/ar/profile' },
-          { label: profileCode },
+          { label: 'Edit' },
         ]}
       />
 
-      <Paper withBorder p="md" pos="relative">
-        <LoadingOverlay visible={isLoading} overlayProps={{ blur: 2 }} />
-
+      <Paper withBorder p="md">
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="md">
-            <Grid gutter="md">
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Profile Code"
-                  placeholder="Enter code"
-                  required
-                  {...form.getInputProps('ProfileCode')}
-                />
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <TextInput
-                  label="Profile Name"
-                  placeholder="Enter name"
-                  required
-                  {...form.getInputProps('ProfileName')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <Select
-                  label="Status"
-                  required
-                  data={[
-                    { value: 'true', label: 'Active' },
-                    { value: 'false', label: 'Inactive' },
-                  ]}
-                  value={form.values.IsActive ? 'true' : 'false'}
-                  onChange={(value) => form.setFieldValue('IsActive', value === 'true')}
-                />
-              </Grid.Col>
-            </Grid>
+            <Group grow>
+              <TextInput
+                label="Profile Code"
+                required
+                {...form.getInputProps('ProfileCode')}
+              />
+              <Select
+                label="AR Type"
+                data={[
+                  { value: '1', label: 'Customer' },
+                  { value: '2', label: 'Agent' },
+                  { value: '3', label: 'Corporate' },
+                ]}
+                {...form.getInputProps('ArTypeId')}
+              />
+            </Group>
 
-            <Grid gutter="md">
-              <Grid.Col span={3}>
-                <TextInput
-                  label="AR Type"
-                  placeholder="Select type"
-                  required
-                  {...form.getInputProps('ArTypeId')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Title"
-                  placeholder="Select title"
-                  {...form.getInputProps('TitleId')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Owner"
-                  placeholder="Select owner"
-                  {...form.getInputProps('OwnerId')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Project"
-                  placeholder="Select project"
-                  {...form.getInputProps('ProjectId')}
-                />
-              </Grid.Col>
-            </Grid>
+            <TextInput
+              label="Profile Name"
+              required
+              {...form.getInputProps('ProfileName')}
+            />
 
-            <Grid gutter="md">
-              <Grid.Col span={6}>
-                <TextInput
-                  label="Address"
-                  placeholder="Enter address"
-                  {...form.getInputProps('Address')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <TextInput
-                  label="Tax ID"
-                  placeholder="Enter tax ID"
-                  {...form.getInputProps('TaxId')}
-                />
-              </Grid.Col>
-              <Grid.Col span={3}>
-                <Select
-                  label="Currency"
-                  placeholder="Select currency"
-                  required
-                  data={[
-                    { value: 'THB', label: 'THB - Thai Baht' },
-                    { value: 'USD', label: 'USD - US Dollar' },
-                    { value: 'EUR', label: 'EUR - Euro' },
-                  ]}
-                  {...form.getInputProps('CurCode')}
-                />
-              </Grid.Col>
-            </Grid>
+            <Group grow>
+              <TextInput
+                label="Contact Person"
+                {...form.getInputProps('ContactPerson')}
+              />
+              <TextInput
+                label="Phone"
+                {...form.getInputProps('Phone')}
+              />
+            </Group>
 
-            <Grid gutter="md">
-              <Grid.Col span={4}>
-                <TextInput
-                  label="Contact Person"
-                  placeholder="Enter contact person"
-                  {...form.getInputProps('ContactPerson')}
-                />
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <TextInput
-                  label="Phone"
-                  placeholder="Enter phone"
-                  {...form.getInputProps('Phone')}
-                />
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <TextInput
-                  label="Email"
-                  placeholder="Enter email"
-                  {...form.getInputProps('Email')}
-                />
-              </Grid.Col>
-            </Grid>
+            <Group grow>
+              <TextInput
+                label="Email"
+                {...form.getInputProps('Email')}
+              />
+              <TextInput
+                label="Tax ID"
+                {...form.getInputProps('TaxId')}
+              />
+            </Group>
 
-            <Grid gutter="md">
-              <Grid.Col span={3}>
-                <NumberInput
-                  label="Credit Limit"
-                  placeholder="Enter credit limit"
-                  required
-                  min={0}
-                  decimalScale={2}
-                  {...form.getInputProps('CreditLimit')}
-                />
-              </Grid.Col>
-            </Grid>
+            <Textarea
+              label="Address"
+              minRows={3}
+              {...form.getInputProps('Address')}
+            />
 
-            <Group justify="flex-end">
-              <Button
-                variant="subtle"
-                leftSection={<IconX size={16} />}
-                onClick={handleCancel}
-              >
+            <Select
+              label="Status"
+              data={[
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' },
+              ]}
+              {...form.getInputProps('IsActive')}
+            />
+
+            <Group justify="flex-end" mt="md">
+              <Button variant="light" color="red" leftSection={<IconTrash size={16} />} onClick={handleDelete}>
+                Delete
+              </Button>
+              <Button variant="light" onClick={() => navigate('/ar/profile')}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                leftSection={<IconCheck size={16} />}
-                loading={updateMutation.isPending}
-              >
-                Save
+              <Button type="submit" loading={updateMutation.isPending}>
+                Update Profile
               </Button>
             </Group>
           </Stack>
         </form>
       </Paper>
-    </div>
+    </Stack>
   );
 }
