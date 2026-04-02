@@ -1,23 +1,26 @@
 import { AppShell as MantineAppShell, Burger, Group, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { Outlet } from 'react-router';
+import { Outlet, useNavigate } from 'react-router';
 import { NavbarMenu } from './NavbarMenu';
 import { UserMenu } from './UserMenu';
+import { useAuthStore } from '../contexts/AuthContext';
 
 export function AppShell() {
   const [opened, { toggle }] = useDisclosure();
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
-  // TODO: Replace with actual auth context
-  const user = {
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  // Use actual user data from auth store, fallback for TypeScript
+  const currentUser = user || {
     UserName: 'admin',
     FullName: 'Administrator',
     Email: 'admin@carmen.com',
     Permissions: ['Sys.Administration'],
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('AccessToken');
-    window.location.href = '/#/login';
   };
 
   return (
@@ -44,7 +47,7 @@ export function AppShell() {
             </Text>
           </Group>
           <UserMenu
-            user={user}
+            user={currentUser}
             onLogout={handleLogout}
             onChangePassword={() => {}}
             onProfile={() => {}}
@@ -53,7 +56,7 @@ export function AppShell() {
       </MantineAppShell.Header>
 
       <MantineAppShell.Navbar p="md">
-        <NavbarMenu permissions={user.Permissions} />
+        <NavbarMenu permissions={currentUser.Permissions} />
       </MantineAppShell.Navbar>
 
       <MantineAppShell.Main>

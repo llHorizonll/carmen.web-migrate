@@ -13,3 +13,4 @@ export { InlineTable, type InlineTableProps } from './InlineTable';
 export { ActionMenu, type ActionMenuProps, type ActionItem } from './ActionMenu';
 export { StatusBadge, type StatusBadgeProps, type StatusType } from './StatusBadge';
 export { FilterPanel, type FilterPanelProps, type FilterField } from './FilterPanel';
+export { ProtectedRoute } from './ProtectedRoute';
