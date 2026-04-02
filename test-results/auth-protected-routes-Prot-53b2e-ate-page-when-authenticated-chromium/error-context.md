@@ -7,14 +7,20 @@
 # Test info
 
 - Name: auth/protected-routes.spec.ts >> Protected Routes - Authenticated Access >> should access GL journal voucher create page when authenticated
-- Location: tests/e2e/auth/protected-routes.spec.ts:218:3
+- Location: tests/e2e/auth/protected-routes.spec.ts:202:3
 
 # Error details
 
 ```
-TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+Error: expect(page).not.toHaveURL(expected) failed
+
+Expected pattern: not /\/login/
+Received string: "http://localhost:5173/login"
+Timeout: 5000ms
+
 Call log:
-  - waiting for locator('input[type="password"]') to be visible
+  - Expect "not toHaveURL" with timeout 5000ms
+    8 × unexpected value "http://localhost:5173/login"
 
 ```
 
@@ -37,7 +43,7 @@ Call log:
             - textbox "Username" [ref=e24]:
               - /placeholder: Enter your username
               - text: admin
-        - button "Next" [active] [ref=e26] [cursor=pointer]:
+        - button "Next" [ref=e26] [cursor=pointer]:
           - generic [ref=e28]: Next
       - paragraph [ref=e29]:
         - text: Copyright ©
@@ -56,152 +62,206 @@ Call log:
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | /**
-  4   |  * Protected Routes Authentication Tests
-  5   |  * 
-  6   |  * These tests verify:
-  7   |  * - Accessing protected pages without login redirects to login
-  8   |  * - After login, user is redirected back to original page
-  9   |  * - Authenticated users can access protected pages
-  10  |  * - All module routes are properly protected
-  11  |  */
-  12  | 
-  13  | // List of protected routes to test
-  14  | const PROTECTED_ROUTES = [
-  15  |   { path: '/dashboard', name: 'Dashboard' },
-  16  |   { path: '/ar/folio', name: 'AR Folio' },
-  17  |   { path: '/ar/invoice', name: 'AR Invoice List' },
-  18  |   { path: '/ar/invoice/new', name: 'AR Invoice Create' },
-  19  |   { path: '/ar/receipt', name: 'AR Receipt List' },
-  20  |   { path: '/ar/receipt/new', name: 'AR Receipt Create' },
-  21  |   { path: '/ar/profile', name: 'AR Profile List' },
-  22  |   { path: '/ar/profile/new', name: 'AR Profile Create' },
-  23  |   { path: '/ap/invoice', name: 'AP Invoice List' },
-  24  |   { path: '/ap/invoice/new', name: 'AP Invoice Create' },
-  25  |   { path: '/ap/payment', name: 'AP Payment List' },
-  26  |   { path: '/ap/payment/new', name: 'AP Payment Create' },
-  27  |   { path: '/ap/vendor', name: 'AP Vendor List' },
-  28  |   { path: '/ap/vendor/new', name: 'AP Vendor Create' },
-  29  |   { path: '/gl/journal-voucher', name: 'GL Journal Voucher List' },
-  30  |   { path: '/gl/journal-voucher/new', name: 'GL Journal Voucher Create' },
-  31  |   { path: '/gl/allocation-voucher', name: 'GL Allocation Voucher List' },
-  32  |   { path: '/gl/allocation-voucher/new', name: 'GL Allocation Voucher Create' },
-  33  |   { path: '/gl/amortization-voucher', name: 'GL Amortization Voucher List' },
-  34  |   { path: '/gl/amortization-voucher/new', name: 'GL Amortization Voucher Create' },
-  35  |   { path: '/gl/standard-voucher', name: 'GL Standard Voucher List' },
-  36  |   { path: '/gl/standard-voucher/new', name: 'GL Standard Voucher Create' },
-  37  |   { path: '/asset', name: 'Asset List' },
-  38  | ];
-  39  | 
-  40  | // Helper function to perform complete login
-  41  | async function performLogin(page: any, username: string = 'admin', password: string = 'alpha') {
-  42  |   // Step 1: Enter username and click Next
-  43  |   await page.getByPlaceholder('Enter your username').fill(username);
-  44  |   await page.getByRole('button', { name: 'Next' }).click();
-  45  |   
-  46  |   // Wait for password field to appear
-> 47  |   await page.waitForSelector('input[type="password"]', { timeout: 5000 });
-      |              ^ TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
-  48  |   
-  49  |   // Step 2: Enter password and click Sign In
-  50  |   await page.getByPlaceholder('Enter your password').fill(password);
-  51  |   await page.getByRole('button', { name: 'Sign In' }).click();
-  52  | }
-  53  | 
-  54  | test.describe('Protected Routes - Redirect to Login', () => {
-  55  |   test.beforeEach(async ({ page }) => {
-  56  |     // Navigate first, then clear storage
-  57  |     await page.goto('/login');
-  58  |     await page.evaluate(() => {
-  59  |       localStorage.clear();
-  60  |       sessionStorage.clear();
-  61  |     });
-  62  |     await page.reload();
-  63  |   });
-  64  | 
-  65  |   test('should redirect to login when accessing dashboard without auth', async ({ page }) => {
-  66  |     await page.goto('/dashboard');
-  67  |     
-  68  |     // Should be redirected to login page
-  69  |     await expect(page).toHaveURL(/\/login/);
-  70  |     
-  71  |     // Login form should be visible
-  72  |     await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
-  73  |     await expect(page.getByPlaceholder('Enter your username')).toBeVisible();
-  74  |   });
-  75  | 
-  76  |   test('should redirect to login when accessing AR folio without auth', async ({ page }) => {
-  77  |     await page.goto('/ar/folio');
-  78  |     
-  79  |     // Should be redirected to login page
-  80  |     await expect(page).toHaveURL(/\/login/);
-  81  |     await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
-  82  |   });
-  83  | 
-  84  |   test('should preserve redirect URL in state', async ({ page }) => {
-  85  |     const targetPath = '/ar/folio';
-  86  |     await page.goto(targetPath);
-  87  |     
-  88  |     // Check if the original URL is preserved in sessionStorage
-  89  |     const storedRedirect = await page.evaluate(() => {
-  90  |       return sessionStorage.getItem('redirectAfterLogin') || 
-  91  |              localStorage.getItem('redirectAfterLogin');
-  92  |     });
-  93  |     
-  94  |     expect(storedRedirect).toBeTruthy();
-  95  |     expect(storedRedirect).toContain('/ar/folio');
-  96  |   });
-  97  | });
-  98  | 
-  99  | test.describe('Protected Routes - Redirect After Login', () => {
-  100 |   test.beforeEach(async ({ page }) => {
-  101 |     await page.goto('/login');
-  102 |     await page.evaluate(() => {
-  103 |       localStorage.clear();
-  104 |       sessionStorage.clear();
-  105 |     });
-  106 |     await page.reload();
-  107 |   });
-  108 | 
-  109 |   test('should redirect back to AR folio after successful login', async ({ page }) => {
-  110 |     // Try to access protected page
-  111 |     await page.goto('/ar/folio');
-  112 |     
-  113 |     // Should be on login page
-  114 |     await expect(page).toHaveURL(/\/login/);
-  115 |     
-  116 |     // Login with two-step flow
-  117 |     await performLogin(page);
-  118 |     
-  119 |     // Should redirect to originally requested page
-  120 |     await page.waitForURL(/\/ar\/folio/, { timeout: 10000 });
-  121 |     await expect(page).toHaveURL(/\/ar\/folio/);
-  122 |     
-  123 |     // Verify the page loaded correctly
-  124 |     await expect(page.locator('body')).toBeVisible();
-  125 |   });
-  126 | 
-  127 |   test('should redirect back to dashboard after successful login', async ({ page }) => {
-  128 |     // Try to access protected page
-  129 |     await page.goto('/dashboard');
-  130 |     
-  131 |     // Should be on login page
-  132 |     await expect(page).toHaveURL(/\/login/);
-  133 |     
-  134 |     // Login
-  135 |     await performLogin(page);
-  136 |     
-  137 |     // Should redirect to dashboard
-  138 |     await page.waitForURL(/\/dashboard/, { timeout: 10000 });
-  139 |     await expect(page).toHaveURL(/\/dashboard/);
-  140 |     
-  141 |     // Verify dashboard content
-  142 |     await expect(page.locator('body')).toContainText(/Dashboard|Carmen/i);
-  143 |   });
-  144 | 
-  145 |   test('should redirect back to GL journal voucher page after login', async ({ page }) => {
-  146 |     const targetPath = '/gl/journal-voucher';
-  147 |     await page.goto(targetPath);
+  105 |   test.beforeEach(async ({ page }) => {
+  106 |     await page.goto('/login');
+  107 |     await page.evaluate(() => {
+  108 |       localStorage.clear();
+  109 |       sessionStorage.clear();
+  110 |     });
+  111 |     await page.reload();
+  112 |   });
+  113 | 
+  114 |   test('should redirect back to GL journal voucher after successful login', async ({ page }) => {
+  115 |     // Try to access protected page
+  116 |     await page.goto('/gl/journal-voucher');
+  117 |     
+  118 |     // Should be on login page
+  119 |     await expect(page).toHaveURL(/\/login/);
+  120 |     
+  121 |     // Login with two-step flow
+  122 |     await performLogin(page);
+  123 |     
+  124 |     // Should redirect to originally requested page
+  125 |     await page.waitForURL(/\/gl\/journal-voucher/, { timeout: 15000 });
+  126 |     await expect(page).toHaveURL(/\/gl\/journal-voucher/);
+  127 |     
+  128 |     // Verify the page loaded correctly
+  129 |     await expect(page.locator('body')).toBeVisible();
+  130 |   });
+  131 | 
+  132 |   test('should redirect back to dashboard after successful login', async ({ page }) => {
+  133 |     // Try to access protected page
+  134 |     await page.goto('/dashboard');
+  135 |     
+  136 |     // Should be on login page
+  137 |     await expect(page).toHaveURL(/\/login/);
+  138 |     
+  139 |     // Login
+  140 |     await performLogin(page);
+  141 |     
+  142 |     // Should redirect to dashboard
+  143 |     await page.waitForURL(/\/dashboard/, { timeout: 15000 });
+  144 |     await expect(page).toHaveURL(/\/dashboard/);
+  145 |     
+  146 |     // Verify dashboard content
+  147 |     await expect(page.locator('body')).toContainText(/Dashboard|Carmen/i);
+  148 |   });
+  149 | 
+  150 |   test('should redirect back to GL allocation voucher page after login', async ({ page }) => {
+  151 |     const targetPath = '/gl/allocation-voucher';
+  152 |     await page.goto(targetPath);
+  153 |     
+  154 |     // Should be redirected to login
+  155 |     await expect(page).toHaveURL(/\/login/);
+  156 |     
+  157 |     // Login
+  158 |     await performLogin(page);
+  159 |     
+  160 |     // Should redirect back to GL allocation voucher
+  161 |     await page.waitForURL(/\/gl\/allocation-voucher/, { timeout: 15000 });
+  162 |     await expect(page).toHaveURL(/\/gl\/allocation-voucher/);
+  163 |   });
+  164 | });
+  165 | 
+  166 | test.describe('Protected Routes - Authenticated Access', () => {
+  167 |   test.beforeEach(async ({ page }) => {
+  168 |     // Login before each test
+  169 |     await page.goto('/login');
+  170 |     await page.evaluate(() => {
+  171 |       localStorage.clear();
+  172 |       sessionStorage.clear();
+  173 |     });
+  174 |     await page.reload();
+  175 |     await performLogin(page);
+  176 |     
+  177 |     // Wait for navigation to complete
+  178 |     await page.waitForURL(/\/(dashboard|home|$)/, { timeout: 15000 });
+  179 |   });
+  180 | 
+  181 |   test('should access dashboard when authenticated', async ({ page }) => {
+  182 |     await page.goto('/dashboard');
+  183 |     
+  184 |     // Should NOT redirect to login
+  185 |     await expect(page).not.toHaveURL(/\/login/);
+  186 |     
+  187 |     // Page should be accessible
+  188 |     await expect(page.locator('body')).toBeVisible();
+  189 |     await expect(page.locator('body')).toContainText(/Dashboard|Carmen/i);
+  190 |   });
+  191 | 
+  192 |   test('should access GL journal voucher list when authenticated', async ({ page }) => {
+  193 |     await page.goto('/gl/journal-voucher');
+  194 |     
+  195 |     // Should NOT redirect to login
+  196 |     await expect(page).not.toHaveURL(/\/login/);
+  197 |     
+  198 |     // Page should be accessible
+  199 |     await expect(page.locator('body')).toBeVisible();
+  200 |   });
+  201 | 
+  202 |   test('should access GL journal voucher create page when authenticated', async ({ page }) => {
+  203 |     await page.goto('/gl/journal-voucher/new');
+  204 |     
+> 205 |     await expect(page).not.toHaveURL(/\/login/);
+      |                            ^ Error: expect(page).not.toHaveURL(expected) failed
+  206 |     await expect(page.locator('body')).toBeVisible();
+  207 |   });
+  208 | 
+  209 |   test('should access GL allocation voucher list when authenticated', async ({ page }) => {
+  210 |     await page.goto('/gl/allocation-voucher');
+  211 |     
+  212 |     await expect(page).not.toHaveURL(/\/login/);
+  213 |     await expect(page.locator('body')).toBeVisible();
+  214 |   });
+  215 | 
+  216 |   test('should access GL amortization voucher list when authenticated', async ({ page }) => {
+  217 |     await page.goto('/gl/amortization-voucher');
+  218 |     
+  219 |     await expect(page).not.toHaveURL(/\/login/);
+  220 |     await expect(page.locator('body')).toBeVisible();
+  221 |   });
+  222 | 
+  223 |   test('should access GL standard voucher list when authenticated', async ({ page }) => {
+  224 |     await page.goto('/gl/standard-voucher');
+  225 |     
+  226 |     await expect(page).not.toHaveURL(/\/login/);
+  227 |     await expect(page.locator('body')).toBeVisible();
+  228 |   });
+  229 | });
+  230 | 
+  231 | test.describe('Protected Routes - All Routes Coverage', () => {
+  232 |   test.beforeEach(async ({ page }) => {
+  233 |     await page.goto('/login');
+  234 |     await page.evaluate(() => {
+  235 |       localStorage.clear();
+  236 |       sessionStorage.clear();
+  237 |     });
+  238 |     await page.reload();
+  239 |   });
+  240 | 
+  241 |   // Test that all protected routes require authentication
+  242 |   for (const route of PROTECTED_ROUTES) {
+  243 |     test(`should require auth for ${route.name} (${route.path})`, async ({ page }) => {
+  244 |       await page.goto(route.path);
+  245 |       
+  246 |       // Without auth, should redirect to login
+  247 |       await expect(page).toHaveURL(/\/login/);
+  248 |     });
+  249 |   }
+  250 | });
+  251 | 
+  252 | test.describe('Protected Routes - Token Persistence', () => {
+  253 |   test('should maintain authentication after page reload', async ({ page }) => {
+  254 |     // Login first
+  255 |     await page.goto('/login');
+  256 |     await page.evaluate(() => {
+  257 |       localStorage.clear();
+  258 |       sessionStorage.clear();
+  259 |     });
+  260 |     await page.reload();
+  261 |     await performLogin(page);
+  262 |     await page.waitForURL(/\/(dashboard|home|$)/, { timeout: 15000 });
+  263 |     
+  264 |     // Navigate to a protected page
+  265 |     await page.goto('/gl/journal-voucher');
+  266 |     await expect(page).not.toHaveURL(/\/login/);
+  267 |     
+  268 |     // Reload the page
+  269 |     await page.reload();
+  270 |     
+  271 |     // Should still be on the protected page (not redirected to login)
+  272 |     await expect(page).not.toHaveURL(/\/login/);
+  273 |     await expect(page.locator('body')).toBeVisible();
+  274 |   });
+  275 | 
+  276 |   test('should maintain authentication across multiple tabs', async ({ browser }) => {
+  277 |     // Create a new context (simulates separate session)
+  278 |     const context = await browser.newContext();
+  279 |     const page1 = await context.newPage();
+  280 |     
+  281 |     // Login in first tab
+  282 |     await page1.goto('/login');
+  283 |     await performLogin(page1);
+  284 |     await page1.waitForURL(/\/(dashboard|home|$)/, { timeout: 15000 });
+  285 |     
+  286 |     // Open new tab in same context
+  287 |     const page2 = await context.newPage();
+  288 |     await page2.goto('/gl/journal-voucher');
+  289 |     
+  290 |     // Second tab should be authenticated
+  291 |     await expect(page2).not.toHaveURL(/\/login/);
+  292 |     await expect(page2.locator('body')).toBeVisible();
+  293 |     
+  294 |     await context.close();
+  295 |   });
+  296 | });
+  297 | 
+  298 | test.describe('Protected Routes - Logout Behavior', () => {
+  299 |   test.beforeEach(async ({ page }) => {
+  300 |     // Login before each test
+  301 |     await page.goto('/login');
+  302 |     await page.evaluate(() => {
+  303 |       localStorage.clear();
+  304 |       sessionStorage.clear();
+  305 |     });
 ```

@@ -1,4 +1,30 @@
 {
   "cookies": [],
-  "origins": []
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "AccessToken",
+          "value": "mock-token-1775104231655"
+        },
+        {
+          "name": "Tenant",
+          "value": "dev"
+        },
+        {
+          "name": "RefreshToken",
+          "value": "mock-refresh-1775104231655"
+        },
+        {
+          "name": "auth-storage",
+          "value": "{\"state\":{\"language\":\"en-US\",\"rememberMe\":false},\"version\":0}"
+        },
+        {
+          "name": "UserName",
+          "value": "admin"
+        }
+      ]
+    }
+  ]
 }

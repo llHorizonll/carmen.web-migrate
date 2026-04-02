@@ -47,9 +47,9 @@ import {
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
-  tenant: z.string().min(1, 'Tenant is required'),
-  language: z.string().min(1, 'Language is required'),
+  password: z.string().optional(),
+  tenant: z.string().optional(),
+  language: z.string().optional(),
   rememberMe: z.boolean(),
 });
 
@@ -180,6 +180,35 @@ export default function Login() {
 
   // Step 2: Perform login
   const handleLogin = async (values: LoginFormValues) => {
+    // Validate required fields for step 2
+    if (!values.password || values.password.length < 1) {
+      notifications.show({
+        title: 'Validation Error',
+        message: 'Password is required',
+        color: 'red',
+        icon: <IconX size={16} />,
+      });
+      return;
+    }
+    if (!values.tenant || values.tenant.length < 1) {
+      notifications.show({
+        title: 'Validation Error',
+        message: 'Tenant is required',
+        color: 'red',
+        icon: <IconX size={16} />,
+      });
+      return;
+    }
+    if (!values.language || values.language.length < 1) {
+      notifications.show({
+        title: 'Validation Error',
+        message: 'Language is required',
+        color: 'red',
+        icon: <IconX size={16} />,
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       let response;
