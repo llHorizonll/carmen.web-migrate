@@ -22,6 +22,17 @@ export interface User {
   DefaultLanguage: string;
 }
 
+// Permission object returned by Carmen API
+export interface ApiPermission {
+  Seq: number;
+  Name: string;
+  View: boolean;
+  Add: boolean;
+  Edit: boolean;
+  Delete: boolean;
+  Print: boolean;
+}
+
 export interface LoginResponse {
   AccessToken: string;
   RefreshToken: string;
@@ -175,6 +186,14 @@ export async function loginApi(credentials: LoginCredentials): Promise<LoginResp
       throw new Error(data.UserMessage || data.Message || 'Login failed');
     }
 
+    // Transform permissions from API format (array of objects) to string array
+    // API returns: [{ Seq: 1, Name: "GL.Jv", View: true, ... }, ...]
+    // We need: ["GL.Jv", "Sys.Administration", ...]
+    const rawPermissions = data.Permissions || data.User?.Permissions || data.Data?.Permissions || [];
+    const permissions: string[] = Array.isArray(rawPermissions)
+      ? rawPermissions.map((p: ApiPermission | string) => (typeof p === 'string' ? p : p.Name))
+      : [];
+
     // Transform API response to our LoginResponse format
     // The new API returns: { AccessToken, Permissions, ... }
     return {
@@ -186,7 +205,7 @@ export async function loginApi(credentials: LoginCredentials): Promise<LoginResp
         UserName: data.UserName || data.User?.UserName || credentials.UserName,
         FullName: data.FullName || data.User?.FullName || credentials.UserName,
         Email: data.Email || data.User?.Email || '',
-        Permissions: data.Permissions || data.User?.Permissions || [],
+        Permissions: permissions,
         DefaultLanguage: data.Language || data.User?.Language || credentials.Language || 'en-US',
       },
     };
@@ -267,6 +286,12 @@ export async function refreshTokenApi(refreshToken: string): Promise<LoginRespon
       throw new Error(data.UserMessage || data.Message || 'Token refresh failed');
     }
 
+    // Transform permissions from API format (array of objects) to string array
+    const rawPermissions = data.User?.Permissions || data.Data?.User?.Permissions || [];
+    const permissions: string[] = Array.isArray(rawPermissions)
+      ? rawPermissions.map((p: ApiPermission | string) => (typeof p === 'string' ? p : p.Name))
+      : [];
+
     return {
       AccessToken: data.AccessToken || data.Data?.AccessToken,
       RefreshToken: data.RefreshToken || data.Data?.RefreshToken,
@@ -276,7 +301,7 @@ export async function refreshTokenApi(refreshToken: string): Promise<LoginRespon
         UserName: data.User?.UserName || data.Data?.User?.UserName,
         FullName: data.User?.FullName || data.Data?.User?.FullName,
         Email: data.User?.Email || data.Data?.User?.Email,
-        Permissions: data.User?.Permissions || data.Data?.User?.Permissions || [],
+        Permissions: permissions,
         DefaultLanguage: data.User?.DefaultLanguage || data.Data?.User?.DefaultLanguage || 'en-US',
       },
     };
