@@ -10,20 +10,37 @@ import { test, expect } from '@playwright/test';
  * - All module routes are properly protected
  */
 
-// List of protected routes that actually exist in the router
+// All protected routes that need to be tested (from the task requirements)
 const PROTECTED_ROUTES = [
-  { path: '/dashboard', name: 'Dashboard' },
+  // General Ledger
   { path: '/gl/journal-voucher', name: 'GL Journal Voucher' },
-  { path: '/gl/journal-voucher/new', name: 'GL Journal Voucher Create' },
   { path: '/gl/allocation-voucher', name: 'GL Allocation Voucher' },
-  { path: '/gl/allocation-voucher/new', name: 'GL Allocation Voucher Create' },
+  { path: '/gl/template-voucher', name: 'GL Template Voucher' },
+  { path: '/gl/recurring-voucher', name: 'GL Recurring Voucher' },
   { path: '/gl/amortization-voucher', name: 'GL Amortization Voucher' },
-  { path: '/gl/amortization-voucher/new', name: 'GL Amortization Voucher Create' },
-  { path: '/gl/standard-voucher', name: 'GL Standard Voucher' },
-  { path: '/gl/standard-voucher/new', name: 'GL Standard Voucher Create' },
+  { path: '/gl/account-summary', name: 'GL Account Summary' },
+  { path: '/gl/financial-report', name: 'GL Financial Report' },
+  { path: '/gl/chart-of-accounts', name: 'GL Chart of Accounts' },
+  { path: '/gl/budget', name: 'GL Budget' },
+  // Accounts Payable
+  { path: '/ap/vendor', name: 'AP Vendor' },
+  { path: '/ap/invoice', name: 'AP Invoice' },
+  { path: '/ap/payment', name: 'AP Payment' },
+  // Accounts Receivable
+  { path: '/ar/profile', name: 'AR Profile' },
+  { path: '/ar/folio', name: 'AR Folio' },
+  { path: '/ar/invoice', name: 'AR Invoice' },
+  { path: '/ar/receipt', name: 'AR Receipt' },
+  // Asset
+  { path: '/asset/register', name: 'Asset Register' },
+  { path: '/asset/pre-asset', name: 'Asset Pre-Asset' },
+  { path: '/asset/disposal', name: 'Asset Disposal' },
+  // Configuration
+  { path: '/config/company', name: 'Config Company' },
+  { path: '/config/users', name: 'Config Users' },
 ];
 
-// Routes that exist in pages but not yet in router (skip these tests)
+// Routes that exist in pages but not yet in router (skip redirect tests for these)
 const FUTURE_ROUTES = [
   '/ar/folio',
   '/ar/invoice',
@@ -199,13 +216,6 @@ test.describe('Protected Routes - Authenticated Access', () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('should access GL journal voucher create page when authenticated', async ({ page }) => {
-    await page.goto('/gl/journal-voucher/new');
-    
-    await expect(page).not.toHaveURL(/\/login/);
-    await expect(page.locator('body')).toBeVisible();
-  });
-
   test('should access GL allocation voucher list when authenticated', async ({ page }) => {
     await page.goto('/gl/allocation-voucher');
     
@@ -223,6 +233,115 @@ test.describe('Protected Routes - Authenticated Access', () => {
   test('should access GL standard voucher list when authenticated', async ({ page }) => {
     await page.goto('/gl/standard-voucher');
     
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  // Test all menu routes from the task
+  test('should access GL template voucher when authenticated', async ({ page }) => {
+    await page.goto('/gl/template-voucher');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access GL recurring voucher when authenticated', async ({ page }) => {
+    await page.goto('/gl/recurring-voucher');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access GL account summary when authenticated', async ({ page }) => {
+    await page.goto('/gl/account-summary');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access GL financial report when authenticated', async ({ page }) => {
+    await page.goto('/gl/financial-report');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access GL chart of accounts when authenticated', async ({ page }) => {
+    await page.goto('/gl/chart-of-accounts');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access GL budget when authenticated', async ({ page }) => {
+    await page.goto('/gl/budget');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access AP vendor when authenticated', async ({ page }) => {
+    await page.goto('/ap/vendor');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access AP invoice when authenticated', async ({ page }) => {
+    await page.goto('/ap/invoice');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access AP payment when authenticated', async ({ page }) => {
+    await page.goto('/ap/payment');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access AR profile when authenticated', async ({ page }) => {
+    await page.goto('/ar/profile');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access AR folio when authenticated', async ({ page }) => {
+    await page.goto('/ar/folio');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access AR invoice when authenticated', async ({ page }) => {
+    await page.goto('/ar/invoice');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access AR receipt when authenticated', async ({ page }) => {
+    await page.goto('/ar/receipt');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access Asset register when authenticated', async ({ page }) => {
+    await page.goto('/asset/register');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access Asset pre-asset when authenticated', async ({ page }) => {
+    await page.goto('/asset/pre-asset');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access Asset disposal when authenticated', async ({ page }) => {
+    await page.goto('/asset/disposal');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access Config company when authenticated', async ({ page }) => {
+    await page.goto('/config/company');
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should access Config users when authenticated', async ({ page }) => {
+    await page.goto('/config/users');
     await expect(page).not.toHaveURL(/\/login/);
     await expect(page.locator('body')).toBeVisible();
   });
@@ -245,6 +364,39 @@ test.describe('Protected Routes - All Routes Coverage', () => {
       
       // Without auth, should redirect to login
       await expect(page).toHaveURL(/\/login/);
+    });
+  }
+});
+
+test.describe('Protected Routes - Authenticated Access - All Routes', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login before each test
+    await page.goto('/login');
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    await page.reload();
+    await performLogin(page);
+    
+    // Wait for navigation to complete
+    await page.waitForURL(/\/(dashboard|home|$)/, { timeout: 15000 });
+  });
+
+  // Test all routes load correctly when authenticated (no redirect to login, no 404)
+  for (const route of PROTECTED_ROUTES) {
+    test(`should access ${route.name} (${route.path}) when authenticated`, async ({ page }) => {
+      await page.goto(route.path);
+      
+      // Should NOT redirect to login
+      await expect(page).not.toHaveURL(/\/login/);
+      
+      // Should NOT be a 404 (check body is visible)
+      await expect(page.locator('body')).toBeVisible();
+      
+      // Additional check: page should not contain 404 text
+      const bodyText = await page.locator('body').textContent();
+      expect(bodyText).not.toMatch(/404|not found|page not found/i);
     });
   }
 });

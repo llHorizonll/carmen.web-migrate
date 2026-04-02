@@ -2,6 +2,11 @@
  * Accounts Payable Services
  * Based on original src/services/accountPayable.js
  * Preserves exact API behavior, adds TypeScript types
+ * 
+ * API Endpoints (per requirements):
+ * - /api/apVendor/search
+ * - /api/apInvoice/search
+ * - /api/apPayment/search
  */
 
 import axiosAuth from '../utils/request';
@@ -21,6 +26,9 @@ import type {
 // AP Vendor APIs
 // ============================================================================
 
+/**
+ * POST /api/apVendor/search
+ */
 export async function getVendorList(
   params: ApVendorFilterParams
 ): Promise<PagingResult<ApVendor>> {
@@ -54,6 +62,9 @@ export async function deleteVendor(VendorId: number): Promise<void> {
 // AP Invoice APIs
 // ============================================================================
 
+/**
+ * POST /api/apInvoice/search
+ */
 export async function getApInvoiceSearchList(
   params: ApInvoiceFilterParams
 ): Promise<PagingResult<ApInvoice>> {
@@ -105,6 +116,9 @@ export async function postApInvoice(ApInvhSeq: number): Promise<ApInvoice> {
 // AP Payment APIs
 // ============================================================================
 
+/**
+ * POST /api/apPayment/search
+ */
 export async function getApPaymentSearchList(
   params: ApPaymentFilterParams
 ): Promise<PagingResult<ApPayment>> {

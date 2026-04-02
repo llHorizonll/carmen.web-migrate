@@ -118,6 +118,7 @@ export interface StandardVoucherDetail {
 }
 
 export interface RecurringVoucher extends StandardVoucher {
+  RecSeq: number;
   RecurringType: 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
   StartDate: string;
   EndDate?: string;

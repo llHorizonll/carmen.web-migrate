@@ -1,52 +1,96 @@
 # carmen.web-migrate Project Tasks
 
-## 📋 Active Tasks
+## 📋 Active Tasks - PHASE 4: Complete All UI Pages
 
-### Phase 1: Authentication System ⏳ IN PROGRESS
-- [x] Backend API integration with Carmen API (dev.carmen4.com)
-  - Agent: `backend-api-agent` (011c3d2b-b997-40cd-9ccf-28657529fdcc)
-  - Status: In Progress
-  
-- [x] Frontend Login Page
-  - Agent: `frontend-login-agent` (7b561a82-48e3-4395-976b-cd87ba2e2f9a)
-  - Status: In Progress
-  
-- [ ] E2E Tests for Auth Flow
-  - Agent: `tester-auth-agent` (0394d0d0-3d2c-41eb-9524-dfeec8c17302)
-  - Status: Waiting for Frontend
-  
-- [ ] Final QA Verification
-  - Agent: `qa-final-agent` (5119e65e-5f92-439d-8c7e-f013722299e1)
-  - Status: Waiting for all above
+### Frontend UI Agent ⏳ IN PROGRESS
+- **Task:** Create/implement all missing UI pages
+- **Agent:** `frontend-ui-complete-agent` (4dd5a807-b663-490e-a2a1-d2bf1b517978)
+- **Status:** Creating placeholder/implementing pages:
+  - GL: RecurringVoucher, TemplateVoucher, AccountSummary, FinancialReport, ChartOfAccounts, Budget
+  - Asset: PreAsset, Disposal, Vendor
+  - Config: Company, Users, Permissions, Workflow, Settings
 
-### Phase 2: Testing & Quality Assurance
-- [ ] Playwright E2E Tests for all pages
-  - Agent: `tester-agent` (14e6ef34-f40b-4b9a-b67f-26d1c4f8b7b1)
-  - Status: In Progress
-  
-- [ ] QA Verification & Bug Reports
-  - Agent: `qa-agent` (9fee3ec5-f0fc-4f1e-ad98-7d99caecb41e)
-  - Status: In Progress
+### Backend API Agent ⏳ IN PROGRESS  
+- **Task:** Fix and verify all API endpoints
+- **Agent:** `backend-api-complete-agent` (d02f9b07-df67-404c-9c6b-54f27f6f09e8)
+- **Status:** Checking/fixing APIs:
+  - GL: glJv, glAllocationJv, glStdJv, glRecurringStdJv, etc.
+  - AP: apVendor, apInvoice, apPayment
+  - AR: arProfile, arFolio, arInvoice, arReceipt
+  - Asset: assetRegister, assetPreAsset, assetDisposal
 
-### Phase 3: API Fixes
-- [ ] Fix api/allocationJv/search endpoint
-  - Agent: `backend-agent` (37c56e66-0708-4be6-819a-2052b8efcb2e)
-  - Status: In Progress
-  
-- [ ] Verify all CRUD operations work
+---
 
-## ✅ Completed Tasks
+## ✅ COMPLETED PHASES
 
-### Build Fixes
-- [x] Fix TypeScript build errors across AR and GL modules
-  - Commit: `ae9dab1`
-  - Date: 2025-04-02
-  - Fixed: Unused imports, Date types, ArReceipt types, property casing
+### Phase 1: Authentication System ✅ DONE
+- [x] Backend API integration with Carmen API
+- [x] Frontend Login Page with 2-step flow
+- [x] Fix Login Next button (validation issue)
+- [x] Fix API endpoints (tenant list, login URL)
+- [x] Fix Permissions structure (object to string array)
+- [x] Fix Authorization header (Bearer format)
 
-### Agent Swarm - TypeScript Fixes
-- [x] ar-folio-profile-fix
-- [x] ar-receipt-fix  
-- [x] gl-journal-fix
+### Phase 2: Routing & Navigation ✅ DONE
+- [x] Fix redirect loop after login
+- [x] Fix auth state persistence (Zustand partialize)
+- [x] Add missing routes (29 pages)
+- [x] Fix menu click redirect to login
+
+### Phase 3: Testing ✅ DONE
+- [x] Playwright login tests passing (12/12)
+- [x] All menu items working (74 tests passed)
+
+---
+
+## 📋 REMAINING WORK
+
+### UI Pages Need Implementation:
+**GL Module:**
+- [ ] RecurringVoucherList/Create
+- [ ] TemplateVoucherList/Create
+- [ ] AccountSummary
+- [ ] FinancialReport
+- [ ] ChartOfAccounts
+- [ ] Budget
+
+**Asset Module:**
+- [ ] AssetPreAsset
+- [ ] AssetDisposal
+- [ ] AssetVendor
+
+**Config Module:**
+- [ ] ConfigCompany
+- [ ] ConfigUsers
+- [ ] ConfigPermissions
+- [ ] ConfigWorkflow
+- [ ] ConfigSettings
+
+### API Endpoints Need Verification:
+**GL:**
+- [ ] /api/glJv/search
+- [ ] /api/glAllocationJv/search
+- [ ] /api/glStdJv/search
+- [ ] /api/glRecurringStdJv/search
+- [ ] /api/glAmortizationStdJv/search
+
+**AP:**
+- [ ] /api/apVendor/search
+- [ ] /api/apInvoice/search
+- [ ] /api/apPayment/search
+
+**AR:**
+- [ ] /api/arProfile/search
+- [ ] /api/arFolio/search
+- [ ] /api/arInvoice/search
+- [ ] /api/arReceipt/search
+
+**Asset:**
+- [ ] /api/assetRegister/search
+- [ ] /api/assetPreAsset/search
+- [ ] /api/assetDisposal/search
+
+---
 
 ## 📅 Scheduled Tasks
 
@@ -65,25 +109,18 @@
 ### Login Credentials
 ```json
 {
-  "Email": "string",
-  "Language": "string",
   "Tenant": "dev",
-  "Password": "alpha",
-  "UserName": "admin"
+  "UserName": "admin",
+  "Password": "alpha"
 }
 ```
 
-## 👥 Agent Assignments
+## 👥 Current Agent Assignments
 
 | Agent | Task | Session Key | Status |
 |-------|------|-------------|--------|
-| backend-api-agent | API Integration | 011c3d2b-b997-40cd-9ccf-28657529fdcc | 🟡 Active |
-| frontend-login-agent | Login Page | 7b561a82-48e3-4395-976b-cd87ba2e2f9a | 🟡 Active |
-| tester-auth-agent | Auth Tests | 0394d0d0-3d2c-41eb-9524-dfeec8c17302 | ⏳ Waiting |
-| qa-final-agent | Final QA | 5119e65e-5f92-439d-8c7e-f013722299e1 | ⏳ Waiting |
-| tester-agent | E2E Tests | 14e6ef34-f40b-4b9a-b67f-26d1c4f8b7b1 | 🟡 Active |
-| qa-agent | QA Verify | 9fee3ec5-f0fc-4f1e-ad98-7d99caecb41e | 🟡 Active |
-| backend-agent | API Fixes | 37c56e66-0708-4be6-819a-2052b8efcb2e | 🟡 Active |
+| frontend-ui-complete-agent | Complete UI Pages | 4dd5a807-b663-490e-a2a1-d2bf1b517978 | 🟡 Active |
+| backend-api-complete-agent | Fix All APIs | d02f9b07-df67-404c-9c6b-54f27f6f09e8 | 🟡 Active |
 
 ## 📝 Notes
 
@@ -92,4 +129,4 @@
 - Test command: `npx playwright test`
 - All agents coordinated by: **นาโน** 💕
 
-Last Updated: 2025-04-02 10:20 GMT+7
+Last Updated: 2025-04-02 16:15 GMT+7

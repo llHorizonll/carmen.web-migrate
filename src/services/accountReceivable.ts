@@ -2,6 +2,12 @@
  * Accounts Receivable Services
  * Based on original src/services/accountReceivable.js
  * Preserves exact API behavior, adds TypeScript types
+ * 
+ * API Endpoints (per requirements):
+ * - /api/arProfile/search
+ * - /api/arFolio/search
+ * - /api/arInvoice/search
+ * - /api/arReceipt/search
  */
 
 import axiosAuth from '../utils/request';
@@ -23,6 +29,9 @@ import type {
 // AR Profile APIs
 // ============================================================================
 
+/**
+ * POST /api/arProfile/search
+ */
 export async function getArProfileList(
   params: ArProfileFilterParams
 ): Promise<PagingResult<ArProfile>> {
@@ -56,6 +65,9 @@ export async function deleteArProfile(ProfileId: number): Promise<void> {
 // AR Folio APIs
 // ============================================================================
 
+/**
+ * POST /api/arFolio/search
+ */
 export async function getArFolioList(
   params: ArFolioFilterParams
 ): Promise<ArFolio[]> {
@@ -79,6 +91,9 @@ export async function getArFolioBalance(
 // AR Invoice APIs
 // ============================================================================
 
+/**
+ * POST /api/arInvoice/search
+ */
 export async function getArInvoiceSearchList(
   params: ArInvoiceFilterParams
 ): Promise<PagingResult<ArInvoice>> {
@@ -130,6 +145,9 @@ export async function postArInvoice(ArInvhSeq: number): Promise<ArInvoice> {
 // AR Receipt APIs
 // ============================================================================
 
+/**
+ * POST /api/arReceipt/search
+ */
 export async function getArReceiptSearchList(
   params: ArReceiptFilterParams
 ): Promise<PagingResult<ArReceipt>> {
