@@ -6,15 +6,15 @@
       "localStorage": [
         {
           "name": "AccessToken",
-          "value": "mock-token-1775104231655"
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiJlNjIxNGY0Yy05MmRkLTExZWMtODc3YS0zYzRhOTJjZTljMmQiLCJVc2VyTmFtZSI6ImFkbWluIiwiVGVuYW50IjoiY2FybWVuY2xvdWQiLCJBZG1pblRva2VuIjoiZjllYmNlM2Q3N2YyZjQ0NWRlZTUyYmEyNTJjYzUzZWUiLCJTZXNzaW9uSWQiOiJiYjNiMTMzZi1iNjdlLTQ1OTEtYmM2ZS1mMTM4MGUwZTE1YmMiLCJFbWFpbCI6IiIsIkxhbmd1YWdlIjoiZW4tVVMiLCJuYmYiOjE3NzUxMTY0ODUsImV4cCI6MTc3NTIwMjg4NSwiaWF0IjoxNzc1MTE2NDg1LCJpc3MiOiJodHRwOi8vd3d3LkNhcm1lblNvZnR3YXJlLmNvbSIsImF1ZCI6Imh0dHA6Ly93d3cuQ2FybWVuU29mdHdhcmUuY29tIn0.k6w1S1-Kgn5lHeh0K4Bu-YclO4kldgiLD4ybjpGsdFE"
         },
         {
           "name": "Tenant",
-          "value": "dev"
+          "value": "carmencloud"
         },
         {
           "name": "RefreshToken",
-          "value": "mock-refresh-1775104231655"
+          "value": "undefined"
         },
         {
           "name": "auth-storage",
@@ -23,6 +23,10 @@
         {
           "name": "UserName",
           "value": "admin"
+        },
+        {
+          "name": "Permissions",
+          "value": "[\"Sys.Dashboard\",\"Sys.Administration\",\"Sys.ProductLicense\",\"Sys.Company\",\"Sys.Pref\",\"Sys.User\",\"Sys.Permission\",\"Sys.Currency\",\"GL.Department\",\"GL.ChartOfAccount\",\"AP.PaymentType\",\"AP.Unit\",\"Sys.Interface\",\"Sys.Dimension\",\"Sys.Email\",\"Sys.Workflow\",\"Sys.TaxProfile\",\"Sys.TaxAllocation\",\"Sys.Setting\",\"Sys.CentralizeCarmen\",\"Sys.CentralizeBlueledgers\",\"GL.Prefix\",\"AP.VendorCate\",\"AP.Config.Wht\",\"AP.Config.WhtType\",\"AR.Type\",\"AR.Title\",\"AR.Owner\",\"AR.Project\",\"Ast.VendorCate\",\"Ast.Category\",\"Ast.Department\",\"Ast.Location\",\"GL.Authorize\",\"GL.Jv\",\"GL.AllocationJv\",\"GL.StdJv\",\"GL.RecurringStdJv\",\"GL.AmortizationStdJv\",\"GL.FinancialReport\",\"GL.Budget\",\"GL.Report\",\"GL.Procedure.ApplyAmortizeVoucher\",\"Ast.Post.Receiving\",\"GL.Procedure.ApplyStandardVoucher\",\"GL.Post.AP\",\"GL.Post.AR\",\"GL.Post.Invent\",\"GL.Post.Asset\",\"GL.Post.PMS\",\"GL.Post.POS\",\"GL.Post.HRM\",\"GL.Procedure.PeriodEnd\",\"AP.Authorize\",\"AP.Vendor\",\"AP.Invoice\",\"AP.Payment\",\"AP.Report\",\"AP.Post.Receiving\",\"AP.Procedure.ChequeReconciliation\",\"AP.Procedure.VatReconciliation\",\"AP.Procedure.EditVatReconciliation\",\"AP.Procedure.WHTReconciliation\",\"AP.Procedure.PeriodEnd\",\"AR.Authorize\",\"AR.Profile\",\"AR.Folio\",\"AR.Invoice\",\"AR.Receipt\",\"AR.Report\",\"AR.Procedure.ApplyContract\",\"AR.Post.PMS\",\"AR.Procedure.PeriodEnd\",\"Ast.Authorize\",\"Ast.Vendor\",\"Ast.Register\",\"Ast.Disposal\",\"Ast.Impairment\",\"Ast.Report\",\"Ast.Post.AP\",\"Ast.Procedure.PeriodEnd\"]"
         }
       ]
     }

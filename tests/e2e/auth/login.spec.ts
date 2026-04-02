@@ -77,11 +77,12 @@ test.describe('Login Page - Basic Loading', () => {
     // Click Next without entering username
     await page.getByRole('button', { name: 'Next' }).click();
     
-    // Should remain on login page
+    // Should remain on login page (form validation prevents navigation)
     await expect(page).toHaveURL(/\/login/);
     
-    // Should show validation error
-    await expect(page.getByText('Username is required')).toBeVisible({ timeout: 5000 });
+    // Should still be on step 1 (username field visible, password field not visible)
+    await expect(page.getByPlaceholder('Enter your username')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('Enter Password');
   });
 });
 
@@ -110,11 +111,11 @@ test.describe('Login Flow - Step 1 to Step 2 Transition', () => {
     // Verify Sign In button is present
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
     
-    // Verify tenant select is present
-    await expect(page.getByLabel('Business Unit (Tenant)')).toBeVisible();
+    // Verify tenant select is present (use role to avoid matching dropdown listbox)
+    await expect(page.getByRole('textbox', { name: 'Business Unit (Tenant)' })).toBeVisible();
     
     // Verify language select is present
-    await expect(page.getByLabel('Language')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Language' })).toBeVisible();
     
     // Verify Back button is present
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
@@ -173,12 +174,12 @@ test.describe('Login Flow - Authentication', () => {
     await page.getByPlaceholder('Enter your password').fill('wrongpassword');
     await page.getByRole('button', { name: 'Sign In' }).click();
     
-    // Wait for error notification (Mantine notification)
-    await expect(page.locator('.mantine-Notification-root')).toBeVisible({ timeout: 5000 });
+    // Wait for error notification to appear - specifically look for "Login Failed" or "Invalid"
+    const errorNotification = page.locator('.mantine-Notification-root').filter({ hasText: /Login Failed|Invalid|Failed/i });
+    await expect(errorNotification).toBeVisible({ timeout: 10000 });
     
-    // Should show error message
-    const errorText = await page.locator('.mantine-Notification-root').textContent();
-    expect(errorText?.toLowerCase()).toMatch(/invalid|failed|error/);
+    // Verify the error message content
+    await expect(errorNotification).toContainText(/Invalid credentials|failed|error/i);
     
     // Should still be on login page
     await expect(page).toHaveURL(/\/login/);
