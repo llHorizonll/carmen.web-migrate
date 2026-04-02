@@ -1,5 +1,5 @@
 import { Navigate, useLocation, Outlet } from 'react-router';
-import { useAuthStore } from '../contexts/AuthContext';
+import { useCarmenAuth } from '../hooks/useCarmenAuth';
 
 interface ProtectedRouteProps {
   children?: React.ReactNode;
@@ -17,7 +17,7 @@ interface ProtectedRouteProps {
  *    children: [...nested routes]
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useCarmenAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
