@@ -13,6 +13,7 @@ import {
   ActionIcon,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { IconSearch, IconPlus, IconEye, IconEdit, IconCopy } from '@tabler/icons-react';
 import { DataTable } from '../../../components/DataTable';
 import { PageHeader } from '../../../components/ui/PageHeader';

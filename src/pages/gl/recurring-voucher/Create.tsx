@@ -4,7 +4,6 @@ import {
   Button,
   Group,
   Stack,
-  TextInput,
   Textarea,
   Select,
   NumberInput,
@@ -38,7 +37,7 @@ export default function RecurringVoucherCreate() {
     },
   });
 
-  const handleSubmit = async (values: typeof form.values) => {
+  const handleSubmit = async (_values: typeof form.values) => {
     try {
       // Mock API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -147,7 +146,6 @@ export default function RecurringVoucherCreate() {
                     label="Max Occurrences (Optional)"
                     description="Maximum number of times to run"
                     min={1}
-                    clearable
                     {...form.getInputProps('MaxOccurrences')}
                   />
                 </Grid.Col>

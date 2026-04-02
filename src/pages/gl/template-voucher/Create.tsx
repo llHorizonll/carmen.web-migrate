@@ -4,6 +4,7 @@ import {
   Button,
   Group,
   Stack,
+  Text,
   TextInput,
   Textarea,
   Select,
@@ -49,7 +50,7 @@ export default function TemplateVoucherCreate() {
     },
   });
 
-  const handleSubmit = async (values: typeof form.values) => {
+  const handleSubmit = async (_values: typeof form.values) => {
     try {
       // Mock API call
       await new Promise((resolve) => setTimeout(resolve, 1000));

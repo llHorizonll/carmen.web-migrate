@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Group,
-  Text,
   Badge,
   Select,
   TextInput,
