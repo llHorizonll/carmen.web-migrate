@@ -110,7 +110,7 @@ interface NavbarMenuProps {
   permissions: string[];
 }
 
-export function NavbarMenu({ permissions }: NavbarMenuProps) {
+export function NavbarMenu({ permissions = [] }: NavbarMenuProps) {
   const renderNavItem = (item: NavItem, level = 0) => {
     const hasPerm = item.permit
       ? hasPermission(permissions, item.permit as Permission)

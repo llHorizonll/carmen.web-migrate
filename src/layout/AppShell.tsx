@@ -16,12 +16,16 @@ export function AppShell() {
   };
 
   // Use actual user data from auth store, fallback for TypeScript
-  const currentUser = user || {
-    UserName: 'admin',
-    FullName: 'Administrator',
-    Email: 'admin@carmen.com',
-    Permissions: ['Sys.Administration'],
-  };
+  // Note: user can be an empty object {} during store rehydration, which is truthy
+  // So we check for actual UserName or Permissions to determine if user is loaded
+  const currentUser = user?.UserName
+    ? user
+    : {
+        UserName: 'admin',
+        FullName: 'Administrator',
+        Email: 'admin@carmen.com',
+        Permissions: ['Sys.Administration'],
+      };
 
   return (
     <MantineAppShell
