@@ -53,14 +53,14 @@ axiosAuth.interceptors.request.use(
     // Get token from localStorage
     const token = localStorage.getItem('AccessToken');
     if (token) {
-      config.headers.Authorization = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     // Handle desktop app tokens
     const url = new URL(window.location.href);
     const tkFromDesktop = url.searchParams.get('tk');
     if (tkFromDesktop) {
-      config.headers.Authorization = tkFromDesktop;
+      config.headers.Authorization = `Bearer ${tkFromDesktop}`;
     }
 
     return config;

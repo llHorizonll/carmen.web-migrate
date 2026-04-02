@@ -84,6 +84,11 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem('Tenant', tenant);
         localStorage.setItem('UserName', response.User.UserName);
         
+        // Store Permissions in localStorage for authorization checks
+        if (response.User.Permissions && response.User.Permissions.length > 0) {
+          localStorage.setItem('Permissions', JSON.stringify(response.User.Permissions));
+        }
+        
         if (rememberMe) {
           localStorage.setItem('RememberMe', 'true');
         } else {
@@ -105,6 +110,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('AccessToken');
         localStorage.removeItem('RefreshToken');
         localStorage.removeItem('Tenant');
+        localStorage.removeItem('Permissions');
         localStorage.removeItem('RememberMe');
         // Keep UserName if remember me was checked
         const rememberMe = localStorage.getItem('RememberMe');
@@ -143,11 +149,13 @@ export const useAuthStore = create<AuthState>()(
 // Login API Service
 // ============================================================================
 
-const LOGIN_API_URL = 'https://dev.carmen4.com/Carmen.api/api/Login/Login';
+const LOGIN_API_URL = 'https://dev.carmen4.com/carmen.api/api/login';
+const ADMIN_TOKEN = 'f9ebce3d77f2f445dee52ba252cc53ee';
 
 export async function loginApi(credentials: LoginCredentials): Promise<LoginResponse> {
   try {
-    const response = await axios.post(LOGIN_API_URL, {
+    // New Login API: POST /api/login?adminToken={adminToken}
+    const response = await axios.post(`${LOGIN_API_URL}?adminToken=${ADMIN_TOKEN}`, {
       Tenant: credentials.Tenant,
       UserName: credentials.UserName,
       Password: credentials.Password,
@@ -162,23 +170,24 @@ export async function loginApi(credentials: LoginCredentials): Promise<LoginResp
 
     const data = response.data;
 
-    // Handle API error responses
-    if (data.Code !== 0 && data.Code !== 200) {
+    // Handle API error responses (if the API returns error codes)
+    if (data.Code !== undefined && data.Code !== 0 && data.Code !== 200) {
       throw new Error(data.UserMessage || data.Message || 'Login failed');
     }
 
     // Transform API response to our LoginResponse format
+    // The new API returns: { AccessToken, Permissions, ... }
     return {
       AccessToken: data.AccessToken || data.Data?.AccessToken,
       RefreshToken: data.RefreshToken || data.Data?.RefreshToken,
       ExpiresIn: data.ExpiresIn || data.Data?.ExpiresIn || 3600,
       User: {
-        UserId: data.User?.UserId || data.Data?.User?.UserId || 0,
-        UserName: data.User?.UserName || data.Data?.User?.UserName || credentials.UserName,
-        FullName: data.User?.FullName || data.Data?.User?.FullName || credentials.UserName,
-        Email: data.User?.Email || data.Data?.User?.Email || '',
-        Permissions: data.User?.Permissions || data.Data?.User?.Permissions || [],
-        DefaultLanguage: data.User?.DefaultLanguage || data.Data?.User?.DefaultLanguage || credentials.Language || 'en-US',
+        UserId: data.UserId || data.User?.UserId || data.Data?.UserId || 0,
+        UserName: data.UserName || data.User?.UserName || credentials.UserName,
+        FullName: data.FullName || data.User?.FullName || credentials.UserName,
+        Email: data.Email || data.User?.Email || '',
+        Permissions: data.Permissions || data.User?.Permissions || [],
+        DefaultLanguage: data.Language || data.User?.Language || credentials.Language || 'en-US',
       },
     };
   } catch (error) {
@@ -202,11 +211,10 @@ export async function loginApi(credentials: LoginCredentials): Promise<LoginResp
 
 export async function getTenantsByUsername(username: string): Promise<Tenant[]> {
   try {
-    // Use the base URL from the login API
-    const baseUrl = 'https://dev.carmen4.com/Carmen.api';
-    const response = await axios.post(`${baseUrl}/api/Login/GetTenantByUserName`, {
-      Username: username,
-    }, {
+    // New Tenant List API: GET /api/userTenant/tenantListIn/{adminToken}/{user}
+    const baseUrl = 'https://dev.carmen4.com/carmen.api';
+    const adminToken = 'f9ebce3d77f2f445dee52ba252cc53ee';
+    const response = await axios.get(`${baseUrl}/api/userTenant/tenantListIn/${adminToken}/${username}`, {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -214,8 +222,14 @@ export async function getTenantsByUsername(username: string): Promise<Tenant[]> 
       timeout: 30000,
     });
 
+    // The API returns an array directly
     const data = response.data;
-
+    
+    // Handle different response formats
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
     if (data.Code !== 0 && data.Code !== 200) {
       throw new Error(data.UserMessage || data.Message || 'Failed to fetch tenants');
     }
@@ -305,8 +319,33 @@ export function clearStoredAuth(): void {
   localStorage.removeItem('RefreshToken');
   localStorage.removeItem('Tenant');
   localStorage.removeItem('Language');
+  localStorage.removeItem('Permissions');
   const rememberMe = localStorage.getItem('RememberMe');
   if (!rememberMe) {
     localStorage.removeItem('UserName');
   }
+}
+
+// ============================================================================
+// Permissions Helper
+// ============================================================================
+
+export function getStoredPermissions(): string[] {
+  const permissionsStr = localStorage.getItem('Permissions');
+  if (!permissionsStr) return [];
+  try {
+    return JSON.parse(permissionsStr) as string[];
+  } catch {
+    return [];
+  }
+}
+
+export function hasPermission(permission: string): boolean {
+  const permissions = getStoredPermissions();
+  return permissions.includes(permission);
+}
+
+export function hasAnyPermission(requiredPermissions: string[]): boolean {
+  const permissions = getStoredPermissions();
+  return requiredPermissions.some(p => permissions.includes(p));
 }
