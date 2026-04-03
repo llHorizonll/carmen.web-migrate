@@ -28,18 +28,18 @@
 - [x] Fix app bugs (arTypes array check, profileId=0 handling)
 - [x] Add view/edit action tests to all list pages
 
-### Phase 6: Extended E2E Tests 🔄 IN PROGRESS
-- [ ] GL Recurring Voucher tests
-- [ ] GL Template Voucher tests  
-- [ ] GL Chart of Accounts tests
-- [ ] GL Budget tests
-- [ ] Config Company tests
-- [ ] Config Users tests
-- [ ] Config Permissions tests
-- [ ] Config Workflow tests
-- [ ] Asset Pre-Asset tests
-- [ ] Asset Disposal tests
-- [ ] Asset Vendor tests
+### Phase 6: Extended E2E Tests ✅ DONE
+- [x] GL Recurring Voucher tests
+- [x] GL Template Voucher tests  
+- [x] GL Chart of Accounts tests
+- [x] GL Budget tests
+- [x] Config Company tests
+- [x] Config Users tests
+- [x] Config Permissions tests
+- [x] Config Workflow tests
+- [x] Asset Pre-Asset tests
+- [x] Asset Disposal tests
+- [x] Asset Vendor tests
 
 ---
 
