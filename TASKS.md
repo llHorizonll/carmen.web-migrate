@@ -19,6 +19,28 @@
   - AR: arProfile, arFolio, arInvoice, arReceipt
   - Asset: assetRegister, assetPreAsset, assetDisposal
 
+### Phase 5: E2E Test Suite ✅ DONE
+- [x] Fix AR module tests (Profile, Receipt, Invoice, Folio) - 31 passed
+- [x] Fix AP module tests (Invoice, Payment) - 30 passed  
+- [x] Fix Asset Register tests
+- [x] Add Config Settings tests
+- [x] Fix GL Journal Voucher tests
+- [x] Fix app bugs (arTypes array check, profileId=0 handling)
+- [x] Add view/edit action tests to all list pages
+
+### Phase 6: Extended E2E Tests 🔄 IN PROGRESS
+- [ ] GL Recurring Voucher tests
+- [ ] GL Template Voucher tests  
+- [ ] GL Chart of Accounts tests
+- [ ] GL Budget tests
+- [ ] Config Company tests
+- [ ] Config Users tests
+- [ ] Config Permissions tests
+- [ ] Config Workflow tests
+- [ ] Asset Pre-Asset tests
+- [ ] Asset Disposal tests
+- [ ] Asset Vendor tests
+
 ---
 
 ## ✅ COMPLETED PHASES
