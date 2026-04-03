@@ -25,6 +25,21 @@ export default function ArFolioList() {
   const profileIdParam = searchParams.get('profileId');
   const profileId = profileIdParam ? parseInt(profileIdParam, 10) : 0;
 
+  // Redirect to profile list if no profileId provided
+  if (profileId === 0) {
+    return (
+      <Box p="md">
+        <Stack gap="md" align="center" py="xl">
+          <Text size="xl" fw={600}>AR Folio</Text>
+          <Text c="dimmed">Please select a profile to view folio</Text>
+          <Button onClick={() => navigate('/ar/profile')}>
+            Go to AR Profiles
+          </Button>
+        </Stack>
+      </Box>
+    );
+  }
+
   // Filter states
   const [page, setPage] = useState(0);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([

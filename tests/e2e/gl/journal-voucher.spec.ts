@@ -92,6 +92,19 @@ test.describe('GL Journal Voucher List Page', () => {
     }
   });
 
+  test('edit action navigates to edit page', async ({ page }) => {
+    // Find first edit button (edit icon)
+    const editButton = page.locator('[data-testid="edit-action"], button[title="Edit"], button:has(.tabler-icon-edit)').first();
+    
+    // Only test if there's data
+    if (await editButton.isVisible().catch(() => false)) {
+      await editButton.click();
+      await expect(page).toHaveURL(/.*gl\/journal-voucher\/\d+.*edit.*/);
+    } else {
+      test.skip();
+    }
+  });
+
   test('view action navigates to detail page', async ({ page }) => {
     // Find first view button (eye icon)
     const viewButton = page.locator('[data-testid="view-action"], button[title="View"], button:has(.tabler-icon-eye)').first();

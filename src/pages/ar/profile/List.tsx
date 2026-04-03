@@ -100,7 +100,7 @@ export default function ArProfileList() {
   // AR Type options
   const arTypeOptions = useMemo(() => {
     const options = [{ value: '', label: 'All Types' }];
-    if (arTypes) {
+    if (arTypes && Array.isArray(arTypes)) {
       arTypes.forEach((type) => {
         options.push({
           value: type.ArTypeId.toString(),
